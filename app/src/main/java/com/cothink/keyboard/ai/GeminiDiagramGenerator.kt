@@ -93,7 +93,7 @@ D -->|No Face| F[Notify User to Retry]
             put("contents", contentsArray)
             put("generationConfig", JSONObject().apply {
                 put("temperature", 0.1)
-                put("maxOutputTokens", 500)
+                put("maxOutputTokens", 1536)
             })
         }
 

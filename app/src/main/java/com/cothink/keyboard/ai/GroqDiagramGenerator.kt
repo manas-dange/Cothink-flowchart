@@ -89,7 +89,7 @@ D --> E[Delivered to Customer]
                     put("model", modelName)
                     put("messages", messagesArray)
                     put("temperature", 0.1)
-                    put("max_tokens", 400)
+                    put("max_tokens", 1536)
                 }
 
                 val body = requestJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -117,6 +117,12 @@ D --> E[Delivered to Customer]
 
                     val messageObj = choices.getJSONObject(0).optJSONObject("message")
                     val rawContent = messageObj?.optString("content").orEmpty()
+
+                    if (rawContent.isBlank()) {
+                        android.util.Log.w("GroqDiagramGenerator", "Model $modelName returned blank content, trying fallback model...")
+                        lastError = IOException("Model $modelName returned blank content.")
+                        return@use
+                    }
 
                     val sanitized = MermaidSanitizer.sanitize(rawContent, transcript)
                     if (MermaidSanitizer.isValid(sanitized)) {

@@ -52,6 +52,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
     private var currentImageUri: Uri? = null
     private var lastErrorMessage: String? = null
+    private var isListening = false
 
     private val diagramGenerator by lazy {
         val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
@@ -118,7 +119,18 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
 
         micButton.setOnClickListener {
-            startVoiceCapture()
+            if (isListening) {
+                isListening = false
+                micButton.clearColorFilter()
+                statusText.text = "Processing speech..."
+                try {
+                    speechRecognizer?.stopListening()
+                } catch (e: Exception) {
+                    speechRecognizer?.cancel()
+                }
+            } else {
+                startVoiceCapture()
+            }
         }
 
         approveButton.setOnClickListener {
@@ -198,17 +210,27 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, defaultLocale)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                // 1-minute (60,000 ms) speech listening limit
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 60000L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
             }
 
-            statusText.text = getString(R.string.listening)
+            isListening = true
+            micButton.setColorFilter(android.graphics.Color.parseColor("#EF4444"))
+            statusText.text = "Listening (up to 1m)... Tap mic when done"
             progressBar.visibility = View.VISIBLE
             speechRecognizer?.startListening(intent)
         } catch (e: Exception) {
+            isListening = false
+            micButton.clearColorFilter()
             resetStatus("Voice error: ${e.message}")
         }
     }
 
     override fun onResults(results: Bundle?) {
+        isListening = false
+        micButton.clearColorFilter()
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val transcript = matches?.firstOrNull()
 
@@ -348,6 +370,8 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     override fun onError(error: Int) {
+        isListening = false
+        micButton.clearColorFilter()
         val message = when (error) {
             SpeechRecognizer.ERROR_NO_MATCH -> "No speech heard. Speak clearly after tapping mic."
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Speech timeout. Tap mic to retry."

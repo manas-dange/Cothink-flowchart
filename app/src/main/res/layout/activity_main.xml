@@ -149,61 +149,42 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="3. AI Configuration (Groq / Gemini)"
+                    android:text="3. AI Engine Configuration"
                     android:textColor="#1E293B"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="API Key (Groq key starting with gsk_ or Gemini key):"
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
+                    android:background="#F0FDF4"
+                    android:orientation="vertical"
+                    android:padding="10dp">
 
-                <EditText
-                    android:id="@+id/et_api_key"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:hint="Paste Groq or Gemini API Key here"
-                    android:inputType="text"
-                    android:padding="10dp"
-                    android:background="#FFFFFF"
-                    android:textSize="13sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚡ Engine: Built-in Groq LPU (Ready)"
+                        android:textColor="#166534"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Model Name:"
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Pre-configured with high-speed Mermaid generation. No key setup needed."
+                        android:textColor="#15803D"
+                        android:textSize="12sp" />
 
-                <EditText
-                    android:id="@+id/et_model_name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:hint="openai/gpt-oss-20b, qwen/qwen3.8-27b, etc."
-                    android:inputType="text"
-                    android:padding="10dp"
-                    android:background="#FFFFFF"
-                    android:textSize="13sp" />
-
-                <Button
-                    android:id="@+id/btn_save_key"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Save Settings" />
+                </LinearLayout>
 
                 <Button
                     android:id="@+id/btn_test_api"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="10dp"
                     android:backgroundTint="#0284C7"
                     android:text="Test AI Connection Now" />
 
@@ -215,6 +196,73 @@
                     android:textColor="#334155"
                     android:textSize="12sp"
                     android:visibility="gone" />
+
+                <!-- Advanced Custom Key Toggle -->
+                <TextView
+                    android:id="@+id/tv_toggle_advanced"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:text="⚙️ Advanced: Override with Custom Key ▼"
+                    android:textColor="#475569"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/layout_advanced_config"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Custom API Key (Groq / Gemini):"
+                        android:textColor="#475569"
+                        android:textSize="12sp" />
+
+                    <EditText
+                        android:id="@+id/et_api_key"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:background="#FFFFFF"
+                        android:hint="Leave empty to use built-in engine"
+                        android:inputType="textPassword"
+                        android:padding="10dp"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Custom Model Name:"
+                        android:textColor="#475569"
+                        android:textSize="12sp" />
+
+                    <EditText
+                        android:id="@+id/et_model_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:background="#FFFFFF"
+                        android:hint="e.g. openai/gpt-oss-20b"
+                        android:inputType="text"
+                        android:padding="10dp"
+                        android:textSize="13sp" />
+
+                    <Button
+                        android:id="@+id/btn_save_key"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Save Custom Settings" />
+
+                </LinearLayout>
 
             </LinearLayout>
 

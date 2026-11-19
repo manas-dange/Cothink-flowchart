@@ -66,10 +66,22 @@ class MainActivity : AppCompatActivity() {
         val btnEnable = findViewById<Button>(R.id.btn_enable_ime)
         val btnSelect = findViewById<Button>(R.id.btn_select_ime)
 
+        val tvToggleAdvanced = findViewById<TextView>(R.id.tv_toggle_advanced)
+        val layoutAdvanced = findViewById<View>(R.id.layout_advanced_config)
+        tvToggleAdvanced.setOnClickListener {
+            if (layoutAdvanced.visibility == View.VISIBLE) {
+                layoutAdvanced.visibility = View.GONE
+                tvToggleAdvanced.text = "⚙️ Advanced: Override with Custom Key ▼"
+            } else {
+                layoutAdvanced.visibility = View.VISIBLE
+                tvToggleAdvanced.text = "⚙️ Advanced: Override with Custom Key ▲"
+            }
+        }
+
         val savedKey = prefs.getString("gemini_api_key", "").orEmpty()
-        val savedModel = prefs.getString("gemini_model", "openai/gpt-oss-20b").orEmpty()
+        val savedModel = prefs.getString("gemini_model", "").orEmpty()
         etApiKey.setText(savedKey)
-        etModelName.setText(if (savedModel.isBlank()) "openai/gpt-oss-20b" else savedModel)
+        etModelName.setText(savedModel)
 
         btnEnable.setOnClickListener {
             startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
@@ -168,32 +180,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun testApiConnection() {
         saveSettings()
-        val key = etApiKey.text.toString().trim()
-        val model = etModelName.text.toString().trim()
-
-        if (key.isBlank()) {
-            tvApiTestResult.visibility = View.VISIBLE
-            tvApiTestResult.text = "✗ Error: API key is empty. Paste your Gemini key first."
-            tvApiTestResult.setTextColor(Color.parseColor("#DC2626"))
-            return
-        }
+        val customKey = etApiKey.text.toString().trim()
+        val customModel = etModelName.text.toString().trim()
+        val effectiveKey = com.cothink.keyboard.ai.BuiltInConfig.getApiKey(customKey)
+        val effectiveModel = com.cothink.keyboard.ai.BuiltInConfig.getModel(customModel)
 
         tvApiTestResult.visibility = View.VISIBLE
-        tvApiTestResult.text = "⏳ Contacting Gemini API using model '$model'..."
+        tvApiTestResult.text = "⏳ Contacting AI Engine ($effectiveModel)..."
         tvApiTestResult.setTextColor(Color.parseColor("#0284C7"))
 
         lifecycleScope.launch {
             val generator = com.cothink.keyboard.ai.AiDiagramRouter(
-                apiKeyProvider = { key },
-                modelProvider = { model }
+                apiKeyProvider = { effectiveKey },
+                modelProvider = { effectiveModel }
             )
 
             val testPrompt = "User clicks login. If valid credentials, navigate to dashboard, else show login error."
             val result = generator.generateDiagram(testPrompt)
 
             result.onSuccess { syntax ->
-                val providerName = if (key.startsWith("gsk_", ignoreCase = true)) "Groq ($model)" else "Gemini ($model)"
-                tvApiTestResult.text = "✓ SUCCESS: Connected to $providerName in ~150ms!\nGenerated Syntax:\n$syntax"
+                val providerName = if (effectiveKey.startsWith("gsk_", ignoreCase = true)) "Groq ($effectiveModel)" else "Gemini ($effectiveModel)"
+                tvApiTestResult.text = "✓ SUCCESS: Connected to $providerName in ~200ms!\nGenerated Syntax:\n$syntax"
                 tvApiTestResult.setTextColor(Color.parseColor("#16A34A"))
             }.onFailure { err ->
                 tvApiTestResult.text = "✗ ERROR: ${err.message}"
@@ -259,10 +266,15 @@ class MainActivity : AppCompatActivity() {
                 })
             }
 
+            val defaultLocale = java.util.Locale.getDefault().toLanguageTag()
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, defaultLocale)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 60000L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
             }
 
             inAppSpeechRecognizer?.startListening(intent)

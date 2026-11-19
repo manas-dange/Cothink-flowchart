@@ -5,11 +5,19 @@ class AiDiagramRouter(
     private val modelProvider: () -> String? = { null }
 ) : DiagramGenerator {
 
-    private val groqGenerator = GroqDiagramGenerator(apiKeyProvider, modelProvider)
-    private val geminiGenerator = GeminiDiagramGenerator(apiKeyProvider, modelProvider)
+    private val effectiveApiKeyProvider = {
+        BuiltInConfig.getApiKey(apiKeyProvider())
+    }
+
+    private val effectiveModelProvider = {
+        BuiltInConfig.getModel(modelProvider())
+    }
+
+    private val groqGenerator = GroqDiagramGenerator(effectiveApiKeyProvider, effectiveModelProvider)
+    private val geminiGenerator = GeminiDiagramGenerator(effectiveApiKeyProvider, effectiveModelProvider)
 
     override suspend fun generateDiagram(transcript: String): Result<String> {
-        val key = apiKeyProvider()?.trim().orEmpty()
+        val key = effectiveApiKeyProvider().trim()
         return if (key.startsWith("gsk_", ignoreCase = true)) {
             groqGenerator.generateDiagram(transcript)
         } else {

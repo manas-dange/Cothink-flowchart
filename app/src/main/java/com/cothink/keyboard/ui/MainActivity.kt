@@ -96,6 +96,17 @@ class MainActivity : AppCompatActivity() {
             testApiConnection()
         }
 
+        // Enable rich PNG content receiving on the test EditText so commitContent succeeds
+        val etTestField = findViewById<EditText>(R.id.et_test_field)
+        val mimeTypes = arrayOf("image/png", "image/jpeg", "image/*")
+        androidx.core.view.ViewCompat.setOnReceiveContentListener(etTestField, mimeTypes) { _, payload ->
+            val split = payload.partition { it.uri != null }
+            if (split.first != null) {
+                Toast.makeText(this, "✓ Direct Diagram Injection Successful in Test Field!", Toast.LENGTH_LONG).show()
+            }
+            split.second
+        }
+
         updatePermissionUi()
     }
 

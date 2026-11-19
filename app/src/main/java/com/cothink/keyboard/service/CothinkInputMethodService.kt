@@ -176,26 +176,20 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
 
         try {
+            speechRecognizer?.cancel()
             speechRecognizer?.destroy()
-            speechRecognizer = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
-                SpeechRecognizer.isOnDeviceRecognitionAvailable(applicationContext)
-            ) {
-                SpeechRecognizer.createOnDeviceSpeechRecognizer(applicationContext)
-            } else {
-                SpeechRecognizer.createSpeechRecognizer(applicationContext)
-            }.apply {
+            speechRecognizer = null
+
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
                 setRecognitionListener(this@CothinkInputMethodService)
             }
 
+            val defaultLocale = java.util.Locale.getDefault().toLanguageTag()
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-US")
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, defaultLocale)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 3000L)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2500L)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
             }
 
             statusText.text = getString(R.string.listening)
@@ -275,15 +269,22 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         val editorInfo = currentInputEditorInfo
 
         if (inputConnection == null || editorInfo == null) {
-            Toast.makeText(this, "Active input field not found", Toast.LENGTH_SHORT).show()
+            copyToClipboardFallback(uri)
+            resetToKeyboard()
             return
         }
 
         val supportedMimeTypes = EditorInfoCompat.getContentMimeTypes(editorInfo)
-        val supportsPng = supportedMimeTypes.any { it.equals("image/png", ignoreCase = true) }
+        val supportsPng = supportedMimeTypes.any {
+            it.equals("image/png", ignoreCase = true) ||
+            it.equals("image/*", ignoreCase = true) ||
+            it.equals("*/*", ignoreCase = true)
+        }
 
         if (!supportsPng) {
-            Toast.makeText(this, "Host app does not accept PNG injection", Toast.LENGTH_LONG).show()
+            // App does not accept direct rich image injection, use clipboard fallback
+            copyToClipboardFallback(uri)
+            resetToKeyboard()
             return
         }
 
@@ -309,7 +310,19 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         if (committed) {
             resetToKeyboard()
         } else {
-            Toast.makeText(this, "Failed to commit image into host field", Toast.LENGTH_SHORT).show()
+            copyToClipboardFallback(uri)
+            resetToKeyboard()
+        }
+    }
+
+    private fun copyToClipboardFallback(uri: Uri) {
+        try {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newUri(contentResolver, "CoThinker Flowchart", uri)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "Diagram copied to clipboard! Long-press to paste.", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Unable to copy diagram: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -334,9 +347,12 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network required for speech recognition."
             SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognizer busy. Please wait a second."
             SpeechRecognizer.ERROR_SERVER -> "Speech server error. Please retry."
+            SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "Please wait a moment before tapping mic."
+            SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "Language not supported by speech engine."
             10 -> "Speech service not configured on emulator. Tap 'Sample' button to test!"
             else -> "Voice error ($error). Tap mic to retry."
         }
+        speechRecognizer?.cancel()
         resetStatus(message)
     }
 

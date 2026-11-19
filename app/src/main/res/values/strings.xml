@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">CoThinker Keyboard</string>
+    <string name="ime_service_name">CoThinker Voice-to-Diagram Keyboard</string>
+    <string name="subtype_en_us">English (US)</string>
+    <string name="enable_keyboard">Enable CoThinker Keyboard</string>
+    <string name="select_keyboard">Select CoThinker Keyboard</string>
+    <string name="api_key_hint">Enter Gemini API Key</string>
+    <string name="save_api_key">Save API Key</string>
+    <string name="test_title">Test Voice-to-Diagram</string>
+    <string name="approve">Approve</string>
+    <string name="discard">Discard</string>
+    <string name="listening">Listening... Speak your flowchart</string>
+    <string name="generating">Generating diagram...</string>
+    <string name="rendering">Rendering diagram...</string>
+    <string name="key_123_label">\?123</string>
+</resources>

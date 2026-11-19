@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1E293B</color>
+    <color name="primary_dark">#0F172A</color>
+    <color name="accent">#3B82F6</color>
+    <color name="keyboard_bg">#18181B</color>
+    <color name="key_bg">#27272A</color>
+    <color name="key_text">#F4F4F5</color>
+    <color name="action_key_bg">#3F3F46</color>
+    <color name="approve_green">#16A34A</color>
+    <color name="discard_red">#DC2626</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="mermaid.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: #FFFFFF;
+            overflow: hidden;
+        }
+        #container {
+            display: inline-block;
+            background-color: #FFFFFF;
+            padding: 16px;
+        }
+        #hidden-canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <canvas id="hidden-canvas"></canvas>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: 'loose',
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#EEF2FF',
+                primaryTextColor: '#1E1B4B',
+                primaryBorderColor: '#4338CA',
+                lineColor: '#312E81',
+                secondaryColor: '#E0E7FF',
+                tertiaryColor: '#FFFFFF',
+                fontSize: '15px'
+            },
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: false,
+                curve: 'basis'
+            }
+        });
+
+        async function renderMermaidToPng(syntax) {
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+            const canvas = document.getElementById('hidden-canvas');
+            const ctx = canvas.getContext('2d');
+
+            try {
+                const id = 'mermaid_' + Math.random().toString(36).substring(2, 9);
+                const { svg } = await mermaid.render(id, syntax);
+                container.innerHTML = svg;
+
+                const svgElement = container.querySelector('svg');
+                if (!svgElement) {
+                    throw new Error("SVG element was not generated.");
+                }
+
+                svgElement.style.backgroundColor = '#FFFFFF';
+
+                // Determine dimensions
+                const bBox = svgElement.getBoundingClientRect();
+                const width = Math.max(Math.ceil(bBox.width || svgElement.clientWidth || 600), 200);
+                const height = Math.max(Math.ceil(bBox.height || svgElement.clientHeight || 400), 150);
+
+                const scale = 2.0;
+                const padding = 20 * scale;
+
+                canvas.width = (width * scale) + (padding * 2);
+                canvas.height = (height * scale) + (padding * 2);
+
+                // Fill canvas with solid white background
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Serialize pure SVG to XML
+                const serializer = new XMLSerializer();
+                let svgXml = serializer.serializeToString(svgElement);
+
+                if (!svgXml.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                    svgXml = svgXml.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+                }
+
+                // Pure SVG to base64 Data URL (no Blob URL to prevent cross-origin tainting)
+                const base64Svg = btoa(unescape(encodeURIComponent(svgXml)));
+                const dataUri = 'data:image/svg+xml;base64,' + base64Svg;
+
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        ctx.drawImage(img, padding, padding, width * scale, height * scale);
+                        const base64Png = canvas.toDataURL('image/png');
+                        if (window.AndroidBridge && window.AndroidBridge.onRenderSuccess) {
+                            window.AndroidBridge.onRenderSuccess(base64Png);
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn("Canvas toDataURL exception: " + e);
+                    }
+
+                    // Fallback to DOM Ready
+                    if (window.AndroidBridge && window.AndroidBridge.onDomReady) {
+                        window.AndroidBridge.onDomReady(width, height);
+                    }
+                };
+
+                img.onerror = function(err) {
+                    if (window.AndroidBridge && window.AndroidBridge.onDomReady) {
+                        window.AndroidBridge.onDomReady(width, height);
+                    }
+                };
+
+                img.src = dataUri;
+
+            } catch (err) {
+                if (window.AndroidBridge && window.AndroidBridge.onRenderError) {
+                    window.AndroidBridge.onRenderError(err.message || String(err));
+                }
+            }
+        }
+    </script>
+</body>
+</html>

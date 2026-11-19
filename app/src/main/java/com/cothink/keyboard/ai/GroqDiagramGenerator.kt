@@ -118,16 +118,21 @@ D --> E[Delivered to Customer]
                     val messageObj = choices.getJSONObject(0).optJSONObject("message")
                     val rawContent = messageObj?.optString("content").orEmpty()
 
-                    val sanitized = MermaidSanitizer.sanitize(rawContent)
+                    val sanitized = MermaidSanitizer.sanitize(rawContent, transcript)
                     if (MermaidSanitizer.isValid(sanitized)) {
                         return@withContext Result.success(sanitized)
                     } else {
-                        return@withContext Result.failure(IllegalArgumentException("Generated syntax failed validation:\n$sanitized"))
+                        android.util.Log.w("GroqDiagramGenerator", "Model $modelName produced invalid syntax: $sanitized")
+                        lastError = IllegalArgumentException("Generated syntax failed validation:\n$sanitized")
                     }
                 }
             } catch (e: Exception) {
                 lastError = e
             }
+        }
+
+        if (lastError is IllegalArgumentException) {
+            return@withContext Result.success(MermaidSanitizer.fallbackDiagram(transcript))
         }
 
         Result.failure(lastError ?: IOException("All Groq models failed. Check your API key."))

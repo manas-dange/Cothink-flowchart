@@ -130,16 +130,21 @@ D -->|No Face| F[Notify User to Retry]
                     val parts = content?.optJSONArray("parts")
                     val text = parts?.getJSONObject(0)?.optString("text").orEmpty()
 
-                    val sanitized = MermaidSanitizer.sanitize(text)
+                    val sanitized = MermaidSanitizer.sanitize(text, transcript)
                     if (MermaidSanitizer.isValid(sanitized)) {
                         return@withContext Result.success(sanitized)
                     } else {
-                        return@withContext Result.failure(IllegalArgumentException("Generated syntax failed validation: $sanitized"))
+                        android.util.Log.w("GeminiDiagramGenerator", "Model $modelName produced invalid syntax: $sanitized")
+                        lastError = IllegalArgumentException("Generated syntax failed validation: $sanitized")
                     }
                 }
             } catch (e: Exception) {
                 lastError = e
             }
+        }
+
+        if (lastError is IllegalArgumentException) {
+            return@withContext Result.success(MermaidSanitizer.fallbackDiagram(transcript))
         }
 
         Result.failure(lastError ?: IOException("All candidate Gemini models failed. Please verify your API key."))

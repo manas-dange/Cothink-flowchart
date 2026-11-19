@@ -51,6 +51,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var discardButton: Button
 
     private var currentImageUri: Uri? = null
+    private var lastErrorMessage: String? = null
 
     private val diagramGenerator by lazy {
         val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
@@ -103,6 +104,13 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
     private fun setupVoiceAndPreviewListeners(view: View) {
         val demoButton = view.findViewById<Button>(R.id.btn_demo)
+        statusText.setOnClickListener {
+            val error = lastErrorMessage
+            if (!error.isNullOrBlank()) {
+                Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+            }
+        }
+
         demoButton?.setOnClickListener {
             val samplePrompt = "User clicks login. Check database. If credentials valid, navigate to dashboard. If invalid, show error message."
             statusText.text = "🗣️ \"$samplePrompt\""
@@ -334,7 +342,8 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun resetStatus(message: String) {
-        statusText.text = message
+        lastErrorMessage = message
+        statusText.text = if (message.length > 32) "${message.take(28)}... (tap for info)" else message
         progressBar.visibility = View.GONE
     }
 

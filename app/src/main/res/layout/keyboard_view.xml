@@ -41,8 +41,10 @@
                 android:text="Tap mic to dictate diagram"
                 android:textColor="@color/key_text"
                 android:textSize="13sp"
-                android:ellipsize="end"
-                android:singleLine="true" />
+                android:ellipsize="marquee"
+                android:singleLine="true"
+                android:clickable="true"
+                android:focusable="true" />
 
             <Button
                 android:id="@+id/btn_demo"

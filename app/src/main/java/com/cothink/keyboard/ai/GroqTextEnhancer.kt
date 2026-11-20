@@ -25,14 +25,48 @@ class GroqTextEnhancer(
         const val DEFAULT_MODEL = BuiltInConfig.DEFAULT_MODEL
         const val FALLBACK_MODEL = BuiltInConfig.FALLBACK_MODEL
 
-        const val SYSTEM_PROMPT = """You are an intelligent real-time keyboard text enhancer and speech-to-text polisher.
-Your job is to transform raw input (typed text or spoken transcript) into clear, polished, well-structured text.
+        const val SYSTEM_PROMPT = """You are a silent, direct keyboard text-enhancement engine.
+You receive raw user input from a mobile keyboard and rewrite it into polished, grammatically correct, well-structured text.
 
-RULES:
-1. INSTRUCTION FOLLOWING: If the input contains explicit formatting or style instructions (e.g. "make it bulleted", "make it formal", "make it concise", "write an apology", "translate to Spanish"), follow those instructions faithfully.
-2. GRAMMAR & POLISH: Fix spelling mistakes, punctuation, capitalization, awkward phrasing, and run-on sentences while preserving the original meaning and natural voice.
-3. OUTPUT ONLY THE ENHANCED TEXT: Do NOT include preamble, greetings ("Here is your text:"), conversational commentary, or quotes around the whole response. Output ONLY the final polished text ready to be pasted into the chat bar.
+CRITICAL INSTRUCTIONS:
+1. NEVER ASK QUESTIONS OR FOLLOW-UPS: Under NO circumstances should you ask questions, ask for clarification, or offer multiple choices. NEVER append "Would you like...", "Do you mean...", "Let me know if...", or similar prompts.
+2. DO NOT CONVERSE OR ACT AS A CHATBOT: Never answer questions contained in the user's text. If the user's input is a question (e.g. "what time is the meeting" or "should I learn Python"), polish the phrasing and grammar of their question so they can send it to someone else. DO NOT answer it.
+3. INSTRUCTION FOLLOWING: If the input contains formatting commands (e.g. "make it bulleted", "make it formal", "make it concise", "fix grammar", "translate to French"), apply that transformation directly.
+4. GRAMMAR & REWRITING: Fix misspellings, punctuation, sentence fragments, and awkward phrasing while preserving the user's intended meaning.
+5. STRICT OUTPUT FORMAT: Output ONLY the final polished text. Do not include preambles, greetings, notes, explanations, or enclosing quotation marks. Output must be immediately ready to paste into a chat input.
 """
+
+        fun sanitizeEnhancedText(rawText: String): String {
+            var text = rawText.trim()
+            // Strip any accidental markdown quotes around the whole block
+            if (text.startsWith("\"") && text.endsWith("\"") && text.length > 2) {
+                text = text.substring(1, text.length - 1).trim()
+            }
+
+            // Remove conversational trailers or follow-up questions
+            val lines = text.lines().toMutableList()
+            while (lines.isNotEmpty()) {
+                val lastLine = lines.last().trim()
+                val lower = lastLine.lowercase()
+                if (lower.startsWith("would you like") ||
+                    lower.startsWith("do you want me to") ||
+                    lower.startsWith("let me know if") ||
+                    lower.startsWith("feel free to") ||
+                    lower.startsWith("hope this helps") ||
+                    lower.startsWith("is there anything else") ||
+                    lower.startsWith("if you need more") ||
+                    lower.startsWith("please let me know") ||
+                    lower.startsWith("could you clarify") ||
+                    lower.startsWith("did you mean")
+                ) {
+                    lines.removeAt(lines.size - 1)
+                } else {
+                    break
+                }
+            }
+            val cleaned = lines.joinToString("\n").trim()
+            return if (cleaned.isNotBlank()) cleaned else text
+        }
     }
 
     override suspend fun enhanceText(rawInput: String): Result<String> = withContext(Dispatchers.IO) {
@@ -69,7 +103,7 @@ RULES:
                 val requestJson = JSONObject().apply {
                     put("model", modelName)
                     put("messages", messagesArray)
-                    put("temperature", 0.2)
+                    put("temperature", 0.1)
                     put("max_tokens", 1024)
                 }
 
@@ -97,15 +131,11 @@ RULES:
                     }
 
                     val messageObj = choices.getJSONObject(0).optJSONObject("message")
-                    var content = messageObj?.optString("content").orEmpty().trim()
+                    val rawContent = messageObj?.optString("content").orEmpty()
+                    val cleanedContent = sanitizeEnhancedText(rawContent)
 
-                    // Strip any accidental markdown quotes around the whole block
-                    if (content.startsWith("\"") && content.endsWith("\"") && content.length > 2) {
-                        content = content.substring(1, content.length - 1).trim()
-                    }
-
-                    if (content.isNotBlank()) {
-                        return@withContext Result.success(content)
+                    if (cleanedContent.isNotBlank()) {
+                        return@withContext Result.success(cleanedContent)
                     } else {
                         lastError = IOException("Model $modelName returned blank text.")
                     }

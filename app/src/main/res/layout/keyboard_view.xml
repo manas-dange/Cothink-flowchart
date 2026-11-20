@@ -14,61 +14,136 @@
         android:orientation="vertical"
         android:visibility="visible">
 
-        <!-- Top Action / Status Bar -->
-        <LinearLayout
+        <!-- Top Action Strip / Enhanced Suggestion Strip Container -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="12dp"
             android:background="@color/primary_dark">
 
-            <ImageButton
-                android:id="@+id/btn_mic"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_mic_button"
-                android:contentDescription="Voice to Diagram"
-                android:src="@android:drawable/ic_btn_speak_now"
-                app:tint="@color/white" />
+            <!-- Normal Top Bar: Mic, Status, Enhance, Sample -->
+            <LinearLayout
+                android:id="@+id/layout_normal_top_bar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp"
+                android:visibility="visible">
 
-            <TextView
-                android:id="@+id/tv_status"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="10dp"
-                android:text="Tap mic to dictate diagram"
-                android:textColor="@color/key_text"
-                android:textSize="13sp"
-                android:ellipsize="marquee"
-                android:singleLine="true"
-                android:clickable="true"
-                android:focusable="true" />
+                <ImageButton
+                    android:id="@+id/btn_mic"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_mic_button"
+                    android:contentDescription="Voice Input"
+                    android:src="@android:drawable/ic_btn_speak_now"
+                    app:tint="@color/white" />
 
-            <Button
-                android:id="@+id/btn_demo"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginEnd="6dp"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="0dp"
-                android:text="Sample"
-                android:textSize="11sp"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:backgroundTint="@color/action_key_bg"
-                android:minWidth="0dp"
-                android:minHeight="0dp" />
+                <TextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:text="Tap mic or Enhance"
+                    android:textColor="@color/key_text"
+                    android:textSize="12sp"
+                    android:ellipsize="marquee"
+                    android:singleLine="true"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-            <ProgressBar
-                android:id="@+id/progress_loading"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:visibility="gone"
-                android:indeterminate="true" />
+                <Button
+                    android:id="@+id/btn_enhance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="6dp"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="0dp"
+                    android:text="✨ Enhance"
+                    android:textSize="11sp"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:backgroundTint="#2563EB"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp" />
 
-        </LinearLayout>
+                <Button
+                    android:id="@+id/btn_demo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="0dp"
+                    android:text="📊 Flow"
+                    android:textSize="11sp"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/action_key_bg"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp" />
+
+                <ProgressBar
+                    android:id="@+id/progress_loading"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginStart="6dp"
+                    android:visibility="gone"
+                    android:indeterminate="true" />
+
+            </LinearLayout>
+
+            <!-- Enhanced Text Preview Strip (Shown right below main chat bar!) -->
+            <LinearLayout
+                android:id="@+id/layout_enhanced_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp"
+                android:background="#1E293B"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✨ "
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_enhanced_preview"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:textColor="#F8FAFC"
+                    android:textSize="13sp"
+                    android:ellipsize="marquee"
+                    android:singleLine="true" />
+
+                <ImageButton
+                    android:id="@+id/btn_apply_enhanced"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:background="@drawable/bg_mic_button"
+                    android:backgroundTint="@color/approve_green"
+                    android:contentDescription="Apply enhanced text"
+                    android:src="@drawable/ic_check"
+                    app:tint="@color/white" />
+
+                <ImageButton
+                    android:id="@+id/btn_discard_enhanced"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Discard"
+                    android:src="@drawable/ic_close"
+                    app:tint="#94A3B8" />
+
+            </LinearLayout>
+
+        </FrameLayout>
 
         <!-- QWERTY Keyboard Keys Rows -->
         <LinearLayout

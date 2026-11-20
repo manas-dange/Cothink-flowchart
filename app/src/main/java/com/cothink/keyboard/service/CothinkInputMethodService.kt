@@ -25,8 +25,9 @@ import androidx.core.view.inputmethod.EditorInfoCompat
 import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import com.cothink.keyboard.R
-import com.cothink.keyboard.ai.GeminiDiagramGenerator
+import com.cothink.keyboard.ai.GroqTextEnhancer
 import com.cothink.keyboard.ai.MermaidSanitizer
+import com.cothink.keyboard.ai.TextEnhancer
 import com.cothink.keyboard.renderer.MermaidRenderService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,15 +52,32 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var approveButton: Button
     private lateinit var discardButton: Button
 
+    private lateinit var normalTopBar: LinearLayout
+    private lateinit var enhancedPreviewBar: LinearLayout
+    private lateinit var enhancedPreviewText: TextView
+    private lateinit var applyEnhancedButton: ImageButton
+    private lateinit var discardEnhancedButton: ImageButton
+    private lateinit var enhanceButton: Button
+    private lateinit var demoButton: Button
+
     private var currentImageUri: Uri? = null
     private var lastErrorMessage: String? = null
     private var isListening = false
+    private var currentEnhancedText: String? = null
 
     private val diagramGenerator by lazy {
         val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
         com.cothink.keyboard.ai.AiDiagramRouter(
             apiKeyProvider = { prefs.getString("gemini_api_key", null) },
             modelProvider = { prefs.getString("gemini_model", "openai/gpt-oss-20b") }
+        )
+    }
+
+    private val textEnhancer: TextEnhancer by lazy {
+        val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
+        GroqTextEnhancer(
+            apiKeyProvider = { prefs.getString("gemini_api_key", null) },
+            modelProvider = { prefs.getString("gemini_model", null) }
         )
     }
 
@@ -98,14 +116,26 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         approveButton = view.findViewById(R.id.btn_approve)
         discardButton = view.findViewById(R.id.btn_discard)
 
+        normalTopBar = view.findViewById(R.id.layout_normal_top_bar)
+        enhancedPreviewBar = view.findViewById(R.id.layout_enhanced_preview)
+        enhancedPreviewText = view.findViewById(R.id.tv_enhanced_preview)
+        applyEnhancedButton = view.findViewById(R.id.btn_apply_enhanced)
+        discardEnhancedButton = view.findViewById(R.id.btn_discard_enhanced)
+        enhanceButton = view.findViewById(R.id.btn_enhance)
+        demoButton = view.findViewById(R.id.btn_demo)
+
         setupKeyListeners(view)
         setupVoiceAndPreviewListeners(view)
 
         return view
     }
 
+    override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        hideEnhancedPreview()
+    }
+
     private fun setupVoiceAndPreviewListeners(view: View) {
-        val demoButton = view.findViewById<Button>(R.id.btn_demo)
         statusText.setOnClickListener {
             val error = lastErrorMessage
             if (!error.isNullOrBlank()) {
@@ -113,10 +143,35 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             }
         }
 
-        demoButton?.setOnClickListener {
-            val samplePrompt = "User clicks login. Check database. If credentials valid, navigate to dashboard. If invalid, show error message."
-            statusText.text = "🗣️ \"$samplePrompt\""
-            processTranscript(samplePrompt)
+        enhancedPreviewText.setOnClickListener {
+            val fullText = currentEnhancedText
+            if (!fullText.isNullOrBlank()) {
+                Toast.makeText(this, fullText, Toast.LENGTH_LONG).show()
+            }
+        }
+
+        enhanceButton.setOnClickListener {
+            enhanceCurrentHostText()
+        }
+
+        applyEnhancedButton.setOnClickListener {
+            applyEnhancedText()
+        }
+
+        discardEnhancedButton.setOnClickListener {
+            hideEnhancedPreview()
+        }
+
+        demoButton.setOnClickListener {
+            val hostText = getHostFieldText().trim()
+            if (hostText.isNotBlank()) {
+                statusText.text = "🗣️ \"$hostText\""
+                processTranscript(hostText)
+            } else {
+                val samplePrompt = "User clicks login. Check database. If credentials valid, navigate to dashboard. If invalid, show error message."
+                statusText.text = "🗣️ \"$samplePrompt\""
+                processTranscript(samplePrompt)
+            }
         }
 
         micButton.setOnClickListener {
@@ -143,6 +198,84 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         discardButton.setOnClickListener {
             resetToKeyboard()
         }
+    }
+
+    private fun getHostFieldText(): String {
+        val ic = currentInputConnection ?: return ""
+        val before = ic.getTextBeforeCursor(5000, 0)?.toString().orEmpty()
+        val after = ic.getTextAfterCursor(5000, 0)?.toString().orEmpty()
+        return before + after
+    }
+
+    private fun enhanceCurrentHostText() {
+        val rawText = getHostFieldText().trim()
+        if (rawText.isBlank()) {
+            Toast.makeText(this, "Type text in chat bar first to enhance!", Toast.LENGTH_SHORT).show()
+            resetStatus("Type text to enhance")
+            return
+        }
+
+        statusText.text = "✨ Enhancing text..."
+        progressBar.visibility = View.VISIBLE
+        enhanceButton.isEnabled = false
+
+        serviceScope.launch {
+            val result = textEnhancer.enhanceText(rawText)
+            enhanceButton.isEnabled = true
+            progressBar.visibility = View.GONE
+            result.onSuccess { enhanced ->
+                showEnhancedPreview(enhanced)
+            }.onFailure { err ->
+                resetStatus("Enhance error: ${err.message}")
+            }
+        }
+    }
+
+    private fun showEnhancedPreview(text: String) {
+        currentEnhancedText = text
+        enhancedPreviewText.text = text
+        enhancedPreviewText.isSelected = true
+        normalTopBar.visibility = View.GONE
+        enhancedPreviewBar.visibility = View.VISIBLE
+    }
+
+    private fun hideEnhancedPreview() {
+        currentEnhancedText = null
+        enhancedPreviewBar.visibility = View.GONE
+        normalTopBar.visibility = View.VISIBLE
+        resetStatus("Tap mic or Enhance")
+    }
+
+    private fun applyEnhancedText() {
+        val enhanced = currentEnhancedText ?: return
+        val ic = currentInputConnection
+        if (ic != null) {
+            ic.beginBatchEdit()
+            try {
+                val before = ic.getTextBeforeCursor(5000, 0)?.toString().orEmpty()
+                val after = ic.getTextAfterCursor(5000, 0)?.toString().orEmpty()
+                ic.deleteSurroundingText(before.length, after.length)
+                ic.commitText(enhanced, 1)
+            } finally {
+                ic.endBatchEdit()
+            }
+        }
+        hideEnhancedPreview()
+    }
+
+    private fun isDiagramIntent(transcript: String): Boolean {
+        val lower = transcript.lowercase()
+        return lower.contains("flowchart") ||
+               lower.contains("diagram") ||
+               lower.contains("flow of") ||
+               lower.contains("draw a flow") ||
+               lower.contains("make a flow") ||
+               lower.contains("generate a flow") ||
+               lower.contains("create a flow") ||
+               lower.contains("show a flow") ||
+               lower.contains("workflow diagram") ||
+               lower.contains("architecture diagram") ||
+               lower.contains("process flow")
     }
 
     private fun setupKeyListeners(root: View) {
@@ -244,14 +377,29 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun processTranscript(transcript: String) {
-        statusText.text = getString(R.string.generating)
-        serviceScope.launch {
-            val genResult = diagramGenerator.generateDiagram(transcript)
-            genResult.onSuccess { syntax ->
-                statusText.text = getString(R.string.rendering)
-                renderDiagram(syntax, transcript)
-            }.onFailure { err ->
-                resetStatus("AI error: ${err.message}")
+        if (isDiagramIntent(transcript)) {
+            statusText.text = getString(R.string.generating)
+            progressBar.visibility = View.VISIBLE
+            serviceScope.launch {
+                val genResult = diagramGenerator.generateDiagram(transcript)
+                genResult.onSuccess { syntax ->
+                    statusText.text = getString(R.string.rendering)
+                    renderDiagram(syntax, transcript)
+                }.onFailure { err ->
+                    resetStatus("AI error: ${err.message}")
+                }
+            }
+        } else {
+            statusText.text = "✨ Polishing speech..."
+            progressBar.visibility = View.VISIBLE
+            serviceScope.launch {
+                val result = textEnhancer.enhanceText(transcript)
+                progressBar.visibility = View.GONE
+                result.onSuccess { enhanced ->
+                    showEnhancedPreview(enhanced)
+                }.onFailure { err ->
+                    resetStatus("AI error: ${err.message}")
+                }
             }
         }
     }
@@ -321,7 +469,6 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
 
         if (!supportsPng) {
-            // App does not accept direct rich image injection, use clipboard fallback
             copyToClipboardFallback(uri)
             resetToKeyboard()
             return
@@ -369,7 +516,8 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         currentImageUri = null
         previewLayout.visibility = View.GONE
         normalLayout.visibility = View.VISIBLE
-        resetStatus("Tap mic to dictate diagram")
+        hideEnhancedPreview()
+        resetStatus("Tap mic or Enhance")
     }
 
     private fun resetStatus(message: String) {
@@ -391,7 +539,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             SpeechRecognizer.ERROR_SERVER -> "Speech server error. Please retry."
             SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "Please wait a moment before tapping mic."
             SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "Language not supported by speech engine."
-            10 -> "Speech service not configured on emulator. Tap 'Sample' button to test!"
+            10 -> "Speech service not configured on emulator. Tap 'Flow' button to test!"
             else -> "Voice error ($error). Tap mic to retry."
         }
         speechRecognizer?.cancel()

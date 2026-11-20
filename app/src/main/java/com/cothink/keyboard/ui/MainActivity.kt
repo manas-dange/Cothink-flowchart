@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         androidx.core.view.ViewCompat.setOnReceiveContentListener(etTestField, mimeTypes) { _, payload ->
             val split = payload.partition { it.uri != null }
             if (split.first != null) {
-                Toast.makeText(this, "✓ Direct Diagram Injection Successful in Test Field!", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Direct diagram insertion successful", Toast.LENGTH_LONG).show()
             }
             split.second
         }
@@ -102,12 +102,12 @@ class MainActivity : AppCompatActivity() {
     private fun updatePermissionUi() {
         val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         if (granted) {
-            tvMicPermStatus.text = "✓ GRANTED"
-            tvMicPermStatus.setTextColor(Color.parseColor("#16A34A"))
+            tvMicPermStatus.text = "Permission Granted"
+            tvMicPermStatus.setTextColor(Color.parseColor("#137333"))
             btnGrantMic.visibility = View.GONE
         } else {
-            tvMicPermStatus.text = "✗ NOT GRANTED"
-            tvMicPermStatus.setTextColor(Color.parseColor("#DC2626"))
+            tvMicPermStatus.text = "Permission Required"
+            tvMicPermStatus.setTextColor(Color.parseColor("#BA1A1A"))
             btnGrantMic.visibility = View.VISIBLE
         }
     }
@@ -139,8 +139,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun testAiEngineConnection() {
         tvApiTestResult.visibility = View.VISIBLE
-        tvApiTestResult.text = "⏳ Verifying secure connection to Cloud AI..."
-        tvApiTestResult.setTextColor(Color.parseColor("#0284C7"))
+        tvApiTestResult.text = "Connecting to Cloud AI Engine..."
+        tvApiTestResult.setTextColor(Color.parseColor("#0B57D0"))
         btnTestApi.isEnabled = false
 
         lifecycleScope.launch {
@@ -154,11 +154,11 @@ class MainActivity : AppCompatActivity() {
 
             btnTestApi.isEnabled = true
             result.onSuccess {
-                tvApiTestResult.text = "✓ SUCCESS: CoThinker AI Engine is connected and operational (~150ms latency).\nReady to generate flowcharts and enhance speech."
-                tvApiTestResult.setTextColor(Color.parseColor("#16A34A"))
+                tvApiTestResult.text = "Connected to Cloud AI Engine (~150ms latency). Ready for use."
+                tvApiTestResult.setTextColor(Color.parseColor("#137333"))
             }.onFailure { err ->
-                tvApiTestResult.text = "✗ Connection issue: ${err.message ?: "Please check internet connection."}"
-                tvApiTestResult.setTextColor(Color.parseColor("#DC2626"))
+                tvApiTestResult.text = "Connection error: ${err.message ?: "Please check internet connection."}"
+                tvApiTestResult.setTextColor(Color.parseColor("#BA1A1A"))
             }
         }
     }
@@ -171,48 +171,48 @@ class MainActivity : AppCompatActivity() {
         }
 
         tvMicTestResult.visibility = View.VISIBLE
-        tvMicTestResult.text = "🎙️ Listening... Speak anything now..."
-        tvMicTestResult.setTextColor(Color.parseColor("#0284C7"))
+        tvMicTestResult.text = "Listening... Speak into microphone"
+        tvMicTestResult.setTextColor(Color.parseColor("#0B57D0"))
 
         try {
             inAppSpeechRecognizer?.destroy()
             inAppSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
                 setRecognitionListener(object : RecognitionListener {
                     override fun onReadyForSpeech(params: Bundle?) {
-                        tvMicTestResult.text = "🎙️ Listening... Speak into your mic now!"
+                        tvMicTestResult.text = "Listening... Speak into microphone"
                     }
 
                     override fun onBeginningOfSpeech() {
-                        tvMicTestResult.text = "🔴 Recording sound..."
+                        tvMicTestResult.text = "Recording audio..."
                     }
 
                     override fun onRmsChanged(rmsdB: Float) {}
                     override fun onBufferReceived(buffer: ByteArray?) {}
                     override fun onEndOfSpeech() {
-                        tvMicTestResult.text = "⏳ Processing speech audio..."
+                        tvMicTestResult.text = "Processing audio..."
                     }
 
                     override fun onError(error: Int) {
-                        tvMicTestResult.text = "✗ Speech recognition error ($error). Tap 'Test Microphone' to retry."
-                        tvMicTestResult.setTextColor(Color.parseColor("#DC2626"))
+                        tvMicTestResult.text = "Speech recognition error ($error). Tap to retry."
+                        tvMicTestResult.setTextColor(Color.parseColor("#BA1A1A"))
                     }
 
                     override fun onResults(results: Bundle?) {
                         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                         val text = matches?.firstOrNull()
                         if (!text.isNullOrBlank()) {
-                            tvMicTestResult.text = "✓ SUCCESS! Recognized:\n\"$text\""
-                            tvMicTestResult.setTextColor(Color.parseColor("#16A34A"))
+                            tvMicTestResult.text = "Recognized:\n\"$text\""
+                            tvMicTestResult.setTextColor(Color.parseColor("#137333"))
                         } else {
-                            tvMicTestResult.text = "✗ No speech recognized. Speak closer to the microphone."
-                            tvMicTestResult.setTextColor(Color.parseColor("#DC2626"))
+                            tvMicTestResult.text = "No speech recognized. Speak closer to the microphone."
+                            tvMicTestResult.setTextColor(Color.parseColor("#BA1A1A"))
                         }
                     }
 
                     override fun onPartialResults(partialResults: Bundle?) {
                         val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
                         if (!partial.isNullOrBlank()) {
-                            tvMicTestResult.text = "🗣️ \"$partial\"..."
+                            tvMicTestResult.text = "\"$partial\"..."
                         }
                     }
 
@@ -233,8 +233,8 @@ class MainActivity : AppCompatActivity() {
 
             inAppSpeechRecognizer?.startListening(intent)
         } catch (e: Exception) {
-            tvMicTestResult.text = "✗ Error: ${e.message}"
-            tvMicTestResult.setTextColor(Color.parseColor("#DC2626"))
+            tvMicTestResult.text = "Error: ${e.message}"
+            tvMicTestResult.setTextColor(Color.parseColor("#BA1A1A"))
         }
     }
 

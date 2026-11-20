@@ -22,9 +22,11 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.view.inputmethod.EditorInfoCompat
 import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
+import com.google.android.material.button.MaterialButton
 import com.cothink.keyboard.R
 import com.cothink.keyboard.ai.GroqTextEnhancer
 import com.cothink.keyboard.ai.MermaidSanitizer
@@ -60,7 +62,8 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var enhanceButton: Button
     private lateinit var demoButton: Button
 
-    private lateinit var shiftButton: Button
+    private lateinit var shiftButton: MaterialButton
+    private lateinit var backspaceButton: MaterialButton
     private lateinit var mode123Button: Button
     private val letterButtons = mutableMapOf<Int, Button>()
 
@@ -210,12 +213,12 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private fun enhanceCurrentHostText() {
         val rawText = getHostFieldText().trim()
         if (rawText.isBlank()) {
-            Toast.makeText(this, "Type text in chat bar first to enhance!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Type text in chat bar first to enhance", Toast.LENGTH_SHORT).show()
             resetStatus("Type text to enhance")
             return
         }
 
-        statusText.text = "✨ Enhancing text..."
+        statusText.text = "Enhancing text..."
         progressBar.visibility = View.VISIBLE
         enhanceButton.isEnabled = false
 
@@ -301,6 +304,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
     private fun setupKeyListeners(root: View) {
         shiftButton = root.findViewById(R.id.key_shift)
+        backspaceButton = root.findViewById(R.id.key_backspace)
         mode123Button = root.findViewById(R.id.key_123)
 
         val keyIds = listOf(
@@ -335,6 +339,10 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             }
         }
 
+        backspaceButton.setOnClickListener {
+            currentInputConnection?.deleteSurroundingText(1, 0)
+        }
+
         mode123Button.setOnClickListener {
             isSymbolsMode = !isSymbolsMode
             isShifted = false
@@ -343,10 +351,6 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
         root.findViewById<Button>(R.id.key_space)?.setOnClickListener {
             currentInputConnection?.commitText(" ", 1)
-        }
-
-        root.findViewById<Button>(R.id.key_backspace)?.setOnClickListener {
-            currentInputConnection?.deleteSurroundingText(1, 0)
         }
 
         root.findViewById<Button>(R.id.key_enter)?.setOnClickListener {
@@ -359,8 +363,9 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private fun updateKeyboardKeys() {
         if (isSymbolsMode) {
             mode123Button.text = "ABC"
+            shiftButton.icon = null
             shiftButton.text = "/"
-            shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#283548"))
+            shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#383A40"))
 
             letterButtons[R.id.key_q]?.text = "1"
             letterButtons[R.id.key_w]?.text = "2"
@@ -395,12 +400,15 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             letterButtons[R.id.key_period]?.text = "."
         } else {
             mode123Button.text = "?123"
+            shiftButton.text = ""
             if (isShifted) {
-                shiftButton.text = "⇪"
+                shiftButton.icon = ContextCompat.getDrawable(this, R.drawable.ic_shift_caps)
+                shiftButton.iconTint = ColorStateList.valueOf(Color.WHITE)
                 shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#2563EB"))
             } else {
-                shiftButton.text = "⇧"
-                shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#283548"))
+                shiftButton.icon = ContextCompat.getDrawable(this, R.drawable.ic_shift)
+                shiftButton.iconTint = ColorStateList.valueOf(Color.parseColor("#C4C6D0"))
+                shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#383A40"))
             }
 
             val caseTransform: (String) -> String = { if (isShifted) it.uppercase() else it.lowercase() }
@@ -443,7 +451,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
             != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
-            Toast.makeText(this, "Microphone permission required. Please open CoThinker app to grant it.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Microphone permission required", Toast.LENGTH_LONG).show()
             try {
                 val appIntent = Intent(this, com.cothink.keyboard.ui.MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -482,7 +490,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
             isListening = true
             micButton.setColorFilter(Color.parseColor("#EF4444"))
-            statusText.text = "Listening (up to 1m)... Tap mic when done"
+            statusText.text = "Listening... Tap mic when done"
             progressBar.visibility = View.VISIBLE
             speechRecognizer?.startListening(intent)
         } catch (e: Exception) {
@@ -510,7 +518,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         if (isDiagramIntent(transcript)) {
             generateDiagramFromText(transcript)
         } else {
-            statusText.text = "✨ Polishing speech..."
+            statusText.text = "Polishing speech..."
             progressBar.visibility = View.VISIBLE
             serviceScope.launch {
                 val result = textEnhancer.enhanceText(transcript)
@@ -626,9 +634,9 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newUri(contentResolver, "CoThinker Flowchart", uri)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, "Diagram copied to clipboard! Long-press to paste.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Diagram copied to clipboard", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Unable to copy diagram: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Unable to copy diagram", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -659,7 +667,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             SpeechRecognizer.ERROR_SERVER -> "Speech server error. Please retry."
             SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "Please wait a moment before tapping mic."
             SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "Language not supported by speech engine."
-            10 -> "Speech service not configured on emulator. Tap 'Flow' button to test!"
+            10 -> "Speech service not configured on emulator. Tap 'Flow' button to test."
             else -> "Voice error ($error). Tap mic to retry."
         }
         speechRecognizer?.cancel()
@@ -671,7 +679,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     override fun onBeginningOfSpeech() {
-        statusText.text = "Recording your voice..."
+        statusText.text = "Recording voice..."
     }
 
     override fun onRmsChanged(rmsdB: Float) {}
@@ -684,7 +692,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val partial = matches?.firstOrNull()
         if (!partial.isNullOrBlank()) {
-            statusText.text = "🗣️ \"$partial\""
+            statusText.text = "\"$partial\""
         }
     }
     override fun onEvent(eventType: Int, params: Bundle?) {}

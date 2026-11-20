@@ -4,7 +4,7 @@
     android:id="@+id/keyboard_root"
     android:layout_width="match_parent"
     android:layout_height="285dp"
-    android:background="@color/keyboard_bg">
+    android:background="#1A1C1E">
 
     <!-- Normal Typing & Voice Input Layout -->
     <LinearLayout
@@ -18,7 +18,7 @@
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:background="@color/keyboard_top_bar">
+            android:background="#1F2024">
 
             <!-- Normal Top Bar: Mic, Status, Enhance, Flow -->
             <LinearLayout
@@ -36,7 +36,7 @@
                     android:layout_height="34dp"
                     android:background="@drawable/bg_mic_button"
                     android:contentDescription="Voice Input"
-                    android:src="@android:drawable/ic_btn_speak_now"
+                    android:src="@drawable/ic_mic"
                     app:tint="@color/white" />
 
                 <TextView
@@ -47,7 +47,7 @@
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="6dp"
                     android:text="Tap mic or Enhance"
-                    android:textColor="@color/key_text"
+                    android:textColor="#C4C6D0"
                     android:textSize="12sp"
                     android:ellipsize="marquee"
                     android:singleLine="true"
@@ -61,12 +61,15 @@
                     android:layout_marginEnd="6dp"
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="0dp"
-                    android:text="✨ Enhance"
+                    android:text="Enhance"
                     android:textSize="11sp"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
+                    app:icon="@drawable/ic_sparkle"
+                    app:iconSize="14dp"
+                    app:iconTint="@color/white"
                     app:cornerRadius="16dp"
-                    android:backgroundTint="@color/accent_blue"
+                    android:backgroundTint="#2563EB"
                     android:minWidth="0dp"
                     android:minHeight="0dp" />
 
@@ -76,12 +79,15 @@
                     android:layout_height="32dp"
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="0dp"
-                    android:text="📊 Flow"
+                    android:text="Flow"
                     android:textSize="11sp"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
+                    app:icon="@drawable/ic_flow"
+                    app:iconSize="14dp"
+                    app:iconTint="@color/white"
                     app:cornerRadius="16dp"
-                    android:backgroundTint="@color/accent_emerald"
+                    android:backgroundTint="#059669"
                     android:minWidth="0dp"
                     android:minHeight="0dp" />
 
@@ -95,7 +101,7 @@
 
             </LinearLayout>
 
-            <!-- Enhanced Text Preview Strip (Shown right below main chat bar!) -->
+            <!-- Enhanced Text Preview Strip (Gboard style suggestion strip) -->
             <LinearLayout
                 android:id="@+id/layout_enhanced_preview"
                 android:layout_width="match_parent"
@@ -103,20 +109,21 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingHorizontal="10dp"
-                android:background="#0F172A"
+                android:background="#242830"
                 android:visibility="gone">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="✨ "
-                    android:textSize="14sp" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_sparkle"
+                    app:tint="#60A5FA" />
 
                 <TextView
                     android:id="@+id/tv_enhanced_preview"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
                     android:textColor="#F8FAFC"
                     android:textSize="13sp"
@@ -147,7 +154,7 @@
 
         </FrameLayout>
 
-        <!-- QWERTY / Symbols Keyboard Keys Rows -->
+        <!-- Keyboard Key Rows -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -198,7 +205,15 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
-                <Button style="@style/ActionKeyStyle" android:id="@+id/key_shift" android:text="⇧" android:layout_weight="1.3" />
+                <com.google.android.material.button.MaterialButton
+                    style="@style/ActionKeyStyle"
+                    android:id="@+id/key_shift"
+                    android:layout_weight="1.3"
+                    app:icon="@drawable/ic_shift"
+                    app:iconGravity="textStart"
+                    app:iconSize="18dp"
+                    app:iconTint="@color/key_text"
+                    android:text="" />
                 <Button style="@style/KeyStyle" android:id="@+id/key_z" android:text="z" />
                 <Button style="@style/KeyStyle" android:id="@+id/key_x" android:text="x" />
                 <Button style="@style/KeyStyle" android:id="@+id/key_c" android:text="c" />
@@ -206,7 +221,15 @@
                 <Button style="@style/KeyStyle" android:id="@+id/key_b" android:text="b" />
                 <Button style="@style/KeyStyle" android:id="@+id/key_n" android:text="n" />
                 <Button style="@style/KeyStyle" android:id="@+id/key_m" android:text="m" />
-                <Button style="@style/ActionKeyStyle" android:id="@+id/key_backspace" android:text="⌫" android:layout_weight="1.3" />
+                <com.google.android.material.button.MaterialButton
+                    style="@style/ActionKeyStyle"
+                    android:id="@+id/key_backspace"
+                    android:layout_weight="1.3"
+                    app:icon="@drawable/ic_backspace"
+                    app:iconGravity="textStart"
+                    app:iconSize="20dp"
+                    app:iconTint="@color/key_text"
+                    android:text="" />
             </LinearLayout>
 
             <!-- Row 4: ?123, Comma, Space, Period, Enter -->
@@ -231,7 +254,7 @@
         android:id="@+id/diagram_preview_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/keyboard_bg"
+        android:background="#1A1C1E"
         android:orientation="vertical"
         android:padding="8dp"
         android:visibility="gone">
@@ -240,7 +263,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="✨ Diagram Generated — Ready to Insert"
+            android:text="Diagram Preview"
             android:textAlignment="center"
             android:textColor="@color/key_text"
             android:textSize="12sp"
@@ -280,8 +303,11 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:backgroundTint="@color/discard_red"
+                app:icon="@drawable/ic_close"
+                app:iconSize="16dp"
+                app:iconTint="@color/white"
                 app:cornerRadius="8dp"
-                android:text="✕ Discard"
+                android:text="Discard"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textStyle="bold" />
@@ -293,8 +319,11 @@
                 android:layout_weight="1"
                 android:layout_marginStart="6dp"
                 android:backgroundTint="@color/approve_green"
+                app:icon="@drawable/ic_check"
+                app:iconSize="16dp"
+                app:iconTint="@color/white"
                 app:cornerRadius="8dp"
-                android:text="✓ Insert Diagram"
+                android:text="Insert Diagram"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textStyle="bold" />

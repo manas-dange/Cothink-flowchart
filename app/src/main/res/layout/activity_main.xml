@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC"
+    android:background="#F8F9FA"
     android:fillViewport="true">
 
     <LinearLayout
@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- App Brand Header -->
+        <!-- App Brand Header (Google Pixel / Material 3 style) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -24,14 +24,14 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="@drawable/bg_mic_button"
-                android:backgroundTint="#2563EB">
+                android:backgroundTint="#0B57D0">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:layout_gravity="center"
-                    android:text="💡"
-                    android:textSize="22sp" />
+                    android:src="@drawable/ic_keyboard"
+                    app:tint="@color/white" />
 
             </FrameLayout>
 
@@ -45,46 +45,44 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="CoThinker"
-                    android:textColor="#0F172A"
+                    android:textColor="#1F1F1F"
                     android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-medium" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="AI Flowchart &amp; Speech Keyboard"
-                    android:textColor="#64748B"
+                    android:text="Intelligent Visual &amp; Voice Keyboard"
+                    android:textColor="#444746"
                     android:textSize="13sp" />
 
             </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Status Banner Card -->
+        <!-- System Status Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
-            app:strokeColor="#BBF7D0"
+            app:strokeColor="#C4EED0"
             app:strokeWidth="1dp"
-            app:cardBackgroundColor="#F0FDF4">
+            app:cardBackgroundColor="#E6F4EA">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="●"
-                    android:textColor="#16A34A"
-                    android:textSize="18sp"
-                    android:paddingEnd="10dp" />
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_check_circle"
+                    android:layout_marginEnd="12dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -94,17 +92,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="All AI Systems Operational"
-                        android:textColor="#15803D"
+                        android:text="All Systems Active"
+                        android:textColor="#137333"
                         android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Pre-configured cloud engine ready for diagrams &amp; enhancement"
-                        android:textColor="#166534"
+                        android:text="Cloud AI and speech engine are ready for use"
+                        android:textColor="#1E4620"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -113,14 +111,14 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Step 1: Keyboard Activation Card -->
+        <!-- Step 1: Keyboard Setup Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="1dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="#E0E2EC"
             app:strokeWidth="1dp"
             app:cardBackgroundColor="@color/white">
 
@@ -133,23 +131,23 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1. Setup Keyboard"
-                    android:textColor="#0F172A"
+                    android:text="1. Keyboard Activation"
+                    android:textColor="#1F1F1F"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-medium" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Enable CoThinker in Android settings, then select it as your keyboard."
-                    android:textColor="#64748B"
+                    android:text="Enable CoThinker in Android settings, then select it as your active keyboard."
+                    android:textColor="#444746"
                     android:textSize="13sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="14dp"
                     android:orientation="horizontal">
 
                     <com.google.android.material.button.MaterialButton
@@ -161,8 +159,9 @@
                         android:text="Enable in Settings"
                         android:textAllCaps="false"
                         android:textSize="13sp"
-                        app:cornerRadius="10dp"
-                        android:backgroundTint="#0F172A" />
+                        app:cornerRadius="12dp"
+                        android:textColor="#1F1F1F"
+                        android:backgroundTint="#F2F3F7" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_select_ime"
@@ -170,11 +169,12 @@
                         android:layout_height="44dp"
                         android:layout_weight="1"
                         android:layout_marginStart="6dp"
-                        android:text="Select Keyboard"
+                        android:text="Switch Keyboard"
                         android:textAllCaps="false"
                         android:textSize="13sp"
-                        app:cornerRadius="10dp"
-                        android:backgroundTint="#2563EB" />
+                        app:cornerRadius="12dp"
+                        android:textColor="@color/white"
+                        android:backgroundTint="#0B57D0" />
 
                 </LinearLayout>
 
@@ -182,14 +182,14 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Step 2: Microphone Permission & Quick Test Card -->
+        <!-- Step 2: Voice & Microphone Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="1dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="#E0E2EC"
             app:strokeWidth="1dp"
             app:cardBackgroundColor="@color/white">
 
@@ -209,10 +209,10 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="2. Voice &amp; Microphone"
-                        android:textColor="#0F172A"
+                        android:text="2. Voice Input"
+                        android:textColor="#1F1F1F"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/tv_mic_perm_status"
@@ -220,7 +220,7 @@
                         android:layout_height="wrap_content"
                         android:text="Checking..."
                         android:textSize="13sp"
-                        android:textStyle="bold" />
+                        android:fontFamily="sans-serif-medium" />
 
                 </LinearLayout>
 
@@ -228,39 +228,43 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Required for speaking your ideas and dictating diagrams."
-                    android:textColor="#64748B"
+                    android:text="Microphone access is required for speech dictation and voice-to-diagram."
+                    android:textColor="#444746"
                     android:textSize="13sp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_grant_mic"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:text="Grant Microphone Permission"
                     android:textAllCaps="false"
-                    app:cornerRadius="10dp"
-                    android:backgroundTint="#16A34A" />
+                    app:cornerRadius="12dp"
+                    android:textColor="@color/white"
+                    android:backgroundTint="#0B57D0" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_test_mic"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
                     android:layout_marginTop="8dp"
-                    android:text="🎙️ Test Microphone in App"
+                    android:text="Test Microphone in App"
                     android:textAllCaps="false"
-                    app:cornerRadius="10dp"
-                    android:textColor="#334155"
-                    android:backgroundTint="#F1F5F9" />
+                    app:icon="@drawable/ic_mic"
+                    app:iconSize="18dp"
+                    app:iconTint="#1F1F1F"
+                    app:cornerRadius="12dp"
+                    android:textColor="#1F1F1F"
+                    android:backgroundTint="#F2F3F7" />
 
                 <TextView
                     android:id="@+id/tv_mic_test_result"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:padding="10dp"
-                    android:background="#F8FAFC"
-                    android:textColor="#334155"
+                    android:padding="12dp"
+                    android:background="#F8F9FA"
+                    android:textColor="#1F1F1F"
                     android:textSize="13sp"
                     android:visibility="gone" />
 
@@ -268,14 +272,14 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Step 3: AI Cloud Verification Card (No exposed keys or raw details!) -->
+        <!-- Step 3: Cloud AI Service Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="1dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="#E0E2EC"
             app:strokeWidth="1dp"
             app:cardBackgroundColor="@color/white">
 
@@ -288,38 +292,41 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="3. AI Cloud Service"
-                    android:textColor="#0F172A"
+                    android:text="3. Cloud Engine"
+                    android:textColor="#1F1F1F"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-medium" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Verify that your phone can communicate with the high-speed AI engine."
-                    android:textColor="#64748B"
+                    android:text="Verify connection to the high-speed diagram and text enhancement engine."
+                    android:textColor="#444746"
                     android:textSize="13sp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_test_api"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
-                    android:layout_marginTop="10dp"
-                    android:text="⚡ Verify Cloud AI Connection"
+                    android:layout_marginTop="12dp"
+                    android:text="Check Engine Connection"
                     android:textAllCaps="false"
-                    app:cornerRadius="10dp"
+                    app:icon="@drawable/ic_sparkle"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/white"
+                    app:cornerRadius="12dp"
                     android:textColor="@color/white"
-                    android:backgroundTint="#0284C7" />
+                    android:backgroundTint="#0B57D0" />
 
                 <TextView
                     android:id="@+id/tv_api_test_result"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:padding="10dp"
-                    android:background="#F8FAFC"
-                    android:textColor="#334155"
+                    android:padding="12dp"
+                    android:background="#F8F9FA"
+                    android:textColor="#1F1F1F"
                     android:textSize="13sp"
                     android:visibility="gone" />
 
@@ -333,9 +340,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="24dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="1dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="#E0E2EC"
             app:strokeWidth="1dp"
             app:cardBackgroundColor="@color/white">
 
@@ -348,19 +355,18 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="4. Try CoThinker Keyboard Here"
-                    android:textColor="#0F172A"
+                    android:text="4. Try Keyboard Here"
+                    android:textColor="#1F1F1F"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-medium" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="• Type letters, shift (⇧), or numbers &amp; symbols (?123)\n• Type a flow and tap 📊 Flow to generate a diagram\n• Type notes and tap ✨ Enhance to polish grammar"
-                    android:textColor="#64748B"
-                    android:textSize="12sp"
-                    android:lineSpacingExtra="2dp" />
+                    android:text="Test typing, shift, symbols (?123), Enhance, and Flow:"
+                    android:textColor="#444746"
+                    android:textSize="13sp" />
 
                 <EditText
                     android:id="@+id/et_test_field"
@@ -370,8 +376,8 @@
                     android:gravity="top|start"
                     android:hint="Tap here to open CoThinker keyboard..."
                     android:background="@drawable/bg_mic_button"
-                    android:backgroundTint="#F8FAFC"
-                    android:textColor="#0F172A"
+                    android:backgroundTint="#F2F3F7"
+                    android:textColor="#1F1F1F"
                     android:padding="12dp"
                     android:textSize="14sp" />
 

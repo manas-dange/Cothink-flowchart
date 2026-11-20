@@ -375,8 +375,7 @@
                     android:layout_marginTop="10dp"
                     android:gravity="top|start"
                     android:hint="Tap here to open CoThinker keyboard..."
-                    android:background="@drawable/bg_mic_button"
-                    android:backgroundTint="#F2F3F7"
+                    android:background="@drawable/bg_input_field"
                     android:textColor="#1F1F1F"
                     android:padding="12dp"
                     android:textSize="14sp" />

@@ -26,31 +26,19 @@ class GroqDiagramGenerator(
         const val FALLBACK_MODEL = "openai/gpt-oss-20b"
 
         const val SYSTEM_PROMPT = """
-You are an expert systems thinker and Mermaid.js diagram architect embedded in a keyboard.
-Your goal is to deeply analyze the user's question, decision, or workflow and produce a thoughtful, comprehensive, well-structured flowchart.
+You are an expert real-time Mermaid.js flowchart generator embedded in a voice keyboard.
+Your goal is to turn the user's spoken words into a clean, accurate, and completely valid Mermaid flowchart.
 
-GUIDELINES FOR THOUGHTFUL DIAGRAMS:
-1. THINK DEEPLY: Analyze real-world nuances, practical decision forks, trade-offs, intermediate steps, and concrete actionable outcomes (aim for 6 to 12 meaningful, connected nodes).
-2. DO NOT produce trivial or oversimplified 3-4 node lines. Break decisions down into criteria (e.g. Budget, Need, Usage frequency, Alternatives, Next Steps).
-3. Use decision diamonds {Condition?} with branching paths (-->|Yes| and -->|No| or specific options).
-4. Re-merge common paths where sensible and ensure every branch leads to a helpful conclusion.
-5. Keep individual node labels punchy and concise (under 6 words each).
-6. Output ONLY raw Mermaid syntax starting with "graph TD". NO markdown backticks, NO preamble, NO postscript.
-
-FEW-SHOT EXAMPLE:
-User: "Should I buy a house or keep renting?"
-Output:
-graph TD
-A[Evaluate Current Finances] --> B{Have 20% Down Payment + Emergency Fund?}
-B -->|No| C[Keep Renting & Build Savings]
-B -->|Yes| D{Planning to stay in same city 5+ years?}
-D -->|No| C
-D -->|Yes| E{Is Monthly Mortgage < 30% of Income?}
-E -->|No| C
-E -->|Yes| F{Housing Market & Rates Favorable?}
-F -->|Yes| G[Start House Hunting & Get Pre-approved]
-F -->|No| H[Wait & Monitor Mortgage Rates]
-C --> I[Re-evaluate in 12 Months]
+CORE INSTRUCTIONS:
+1. WORKFLOW DESCRIPTIONS: If the user is describing a process, pipeline, or system (e.g. "how an AI agent works", "order processing flow", etc.), FAITHFULLY extract each step, decision, and loop that the user describes. Do NOT invent a random or unrelated diagram.
+2. OPEN-ENDED QUESTIONS: If the user asks a question or decision ("should I buy X?", "how to do Y?"), structure a logical decision flow with relevant criteria, branches, and outcomes.
+3. SYNTAX RULES (CRITICAL):
+   - Start strictly with "graph TD".
+   - Use clean alphanumeric node IDs (A, B, C, D, E... or N1, N2...). NEVER put spaces in node IDs.
+   - ALWAYS wrap node text in double quotes inside brackets: A["Step Description"], B{"Is Condition Met?"}.
+   - Double quotes around text prevent Mermaid syntax errors from special characters like &, <, >, ?, or parentheses.
+   - Decision diamonds must use braces with quotes: B{"Condition?"} -->|Yes| C["Action"] and B -->|No| D["Action"].
+   - Output ONLY raw Mermaid syntax. NO markdown code fences (no ```), no introductory text, no explanations.
 """
     }
 
@@ -87,7 +75,7 @@ C --> I[Re-evaluate in 12 Months]
                     put("model", modelName)
                     put("messages", messagesArray)
                     put("temperature", 0.1)
-                    put("max_tokens", 1536)
+                    put("max_tokens", 3072)
                 }
 
                 val body = requestJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())

@@ -26,6 +26,7 @@ import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import com.cothink.keyboard.R
 import com.cothink.keyboard.ai.GeminiDiagramGenerator
+import com.cothink.keyboard.ai.MermaidSanitizer
 import com.cothink.keyboard.renderer.MermaidRenderService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -248,14 +249,14 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             val genResult = diagramGenerator.generateDiagram(transcript)
             genResult.onSuccess { syntax ->
                 statusText.text = getString(R.string.rendering)
-                renderDiagram(syntax)
+                renderDiagram(syntax, transcript)
             }.onFailure { err ->
                 resetStatus("AI error: ${err.message}")
             }
         }
     }
 
-    private fun renderDiagram(syntax: String) {
+    private fun renderDiagram(syntax: String, transcript: String = "") {
         val renderer = renderService
         if (renderer == null) {
             resetStatus("Render service offline")
@@ -267,6 +268,14 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             renderResult.onSuccess { uri ->
                 showPreview(uri)
             }.onFailure { err ->
+                if (transcript.isNotBlank()) {
+                    val fallbackSyntax = MermaidSanitizer.fallbackDiagram(transcript)
+                    val retryResult = renderer.renderSyntaxToImage(fallbackSyntax)
+                    if (retryResult.isSuccess) {
+                        showPreview(retryResult.getOrThrow())
+                        return@launch
+                    }
+                }
                 resetStatus("Render error: ${err.message}")
             }
         }

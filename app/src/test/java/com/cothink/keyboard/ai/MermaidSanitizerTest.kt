@@ -19,7 +19,7 @@ class MermaidSanitizerTest {
         """.trimIndent()
 
         val sanitized = MermaidSanitizer.sanitize(raw)
-        assertEquals("graph TD\nA[Start] --> B[End]", sanitized)
+        assertEquals("graph TD\nA[\"Start\"] --> B[\"End\"]", sanitized)
         assertTrue(MermaidSanitizer.isValid(sanitized))
     }
 
@@ -27,7 +27,23 @@ class MermaidSanitizerTest {
     fun testSingleArrowNormalizedToDoubleArrow() {
         val raw = "graph TD\nA[Start] -> B[End]"
         val sanitized = MermaidSanitizer.sanitize(raw)
-        assertEquals("graph TD\nA[Start] --> B[End]", sanitized)
+        assertEquals("graph TD\nA[\"Start\"] --> B[\"End\"]", sanitized)
+        assertTrue(MermaidSanitizer.isValid(sanitized))
+    }
+
+    @Test
+    fun testAutoQuotingUnquotedLabels() {
+        val raw = "graph TD\nA[Validate request & check rate limits] --> B{Retry count < 3?}"
+        val sanitized = MermaidSanitizer.sanitize(raw)
+        assertEquals("graph TD\nA[\"Validate request & check rate limits\"] --> B{\"Retry count < 3?\"}", sanitized)
+        assertTrue(MermaidSanitizer.isValid(sanitized))
+    }
+
+    @Test
+    fun testArrowLabelSpecialCharsSanitized() {
+        val raw = "graph TD\nA -->|Fail & Abort| B"
+        val sanitized = MermaidSanitizer.sanitize(raw)
+        assertEquals("graph TD\nA -->|Fail and Abort| B", sanitized)
         assertTrue(MermaidSanitizer.isValid(sanitized))
     }
 
@@ -35,7 +51,7 @@ class MermaidSanitizerTest {
     fun testNumericNodeIdPrefixing() {
         val raw = "graph TD\n1[Start] --> 2[Step 2] --> 3[End]"
         val sanitized = MermaidSanitizer.sanitize(raw)
-        assertEquals("graph TD\nN1[Start] --> N2[Step 2] --> N3[End]", sanitized)
+        assertEquals("graph TD\nN1[\"Start\"] --> N2[\"Step 2\"] --> N3[\"End\"]", sanitized)
         assertTrue(MermaidSanitizer.isValid(sanitized))
     }
 
@@ -43,7 +59,7 @@ class MermaidSanitizerTest {
     fun testPreambleWithoutDiscardingDiagram() {
         val raw = "Here is the diagram:\nA[Start] --> B[End]"
         val sanitized = MermaidSanitizer.sanitize(raw)
-        assertEquals("graph TD\nA[Start] --> B[End]", sanitized)
+        assertEquals("graph TD\nA[\"Start\"] --> B[\"End\"]", sanitized)
         assertTrue(MermaidSanitizer.isValid(sanitized))
     }
 
@@ -51,7 +67,7 @@ class MermaidSanitizerTest {
     fun testThinkTagStripping() {
         val raw = "<think>Let me analyze the prompt...</think>\ngraph TD\nA[Start] --> B[End]"
         val sanitized = MermaidSanitizer.sanitize(raw)
-        assertEquals("graph TD\nA[Start] --> B[End]", sanitized)
+        assertEquals("graph TD\nA[\"Start\"] --> B[\"End\"]", sanitized)
         assertTrue(MermaidSanitizer.isValid(sanitized))
     }
 
@@ -59,15 +75,7 @@ class MermaidSanitizerTest {
     fun testUnclosedThinkTagHandled() {
         val raw = "<think>Generating diagram...\ngraph TD\nA[Start] --> B[End]"
         val sanitized = MermaidSanitizer.sanitize(raw)
-        assertEquals("graph TD\nA[Start] --> B[End]", sanitized)
-        assertTrue(MermaidSanitizer.isValid(sanitized))
-    }
-
-    @Test
-    fun testDoubleQuotesInsideBracketsConverted() {
-        val raw = "graph TD\nA[\"User enters\"] --> B[\"Done\"]"
-        val sanitized = MermaidSanitizer.sanitize(raw)
-        assertEquals("graph TD\nA['User enters'] --> B['Done']", sanitized)
+        assertEquals("graph TD\nA[\"Start\"] --> B[\"End\"]", sanitized)
         assertTrue(MermaidSanitizer.isValid(sanitized))
     }
 

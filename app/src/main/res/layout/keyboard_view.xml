@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/keyboard_root"
     android:layout_width="match_parent"
-    android:layout_height="280dp"
+    android:layout_height="285dp"
     android:background="@color/keyboard_bg">
 
     <!-- Normal Typing & Voice Input Layout -->
@@ -18,9 +18,9 @@
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:background="@color/primary_dark">
+            android:background="@color/keyboard_top_bar">
 
-            <!-- Normal Top Bar: Mic, Status, Enhance, Sample -->
+            <!-- Normal Top Bar: Mic, Status, Enhance, Flow -->
             <LinearLayout
                 android:id="@+id/layout_normal_top_bar"
                 android:layout_width="match_parent"
@@ -32,8 +32,8 @@
 
                 <ImageButton
                     android:id="@+id/btn_mic"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
                     android:background="@drawable/bg_mic_button"
                     android:contentDescription="Voice Input"
                     android:src="@android:drawable/ic_btn_speak_now"
@@ -54,7 +54,7 @@
                     android:clickable="true"
                     android:focusable="true" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_enhance"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
@@ -65,28 +65,30 @@
                     android:textSize="11sp"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
-                    android:backgroundTint="#2563EB"
+                    app:cornerRadius="16dp"
+                    android:backgroundTint="@color/accent_blue"
                     android:minWidth="0dp"
                     android:minHeight="0dp" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_demo"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:paddingHorizontal="8dp"
+                    android:paddingHorizontal="10dp"
                     android:paddingVertical="0dp"
                     android:text="📊 Flow"
                     android:textSize="11sp"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
-                    android:backgroundTint="@color/action_key_bg"
+                    app:cornerRadius="16dp"
+                    android:backgroundTint="@color/accent_emerald"
                     android:minWidth="0dp"
                     android:minHeight="0dp" />
 
                 <ProgressBar
                     android:id="@+id/progress_loading"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:layout_marginStart="6dp"
                     android:visibility="gone"
                     android:indeterminate="true" />
@@ -101,7 +103,7 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingHorizontal="10dp"
-                android:background="#1E293B"
+                android:background="#0F172A"
                 android:visibility="gone">
 
                 <TextView
@@ -145,78 +147,79 @@
 
         </FrameLayout>
 
-        <!-- QWERTY Keyboard Keys Rows -->
+        <!-- QWERTY / Symbols Keyboard Keys Rows -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:padding="4dp">
+            android:paddingHorizontal="3dp"
+            android:paddingVertical="4dp">
 
-            <!-- Row 1: Q W E R T Y U I O P -->
+            <!-- Row 1: Q W E R T Y U I O P (or 1 2 3 4 5 6 7 8 9 0) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
-                <Button style="@style/KeyStyle" android:id="@+id/key_q" android:text="Q" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_w" android:text="W" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_e" android:text="E" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_r" android:text="R" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_t" android:text="T" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_y" android:text="Y" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_u" android:text="U" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_i" android:text="I" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_o" android:text="O" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_p" android:text="P" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_q" android:text="q" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_w" android:text="w" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_e" android:text="e" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_r" android:text="r" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_t" android:text="t" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_y" android:text="y" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_u" android:text="u" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_i" android:text="i" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_o" android:text="o" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_p" android:text="p" />
             </LinearLayout>
 
-            <!-- Row 2: A S D F G H J K L -->
+            <!-- Row 2: A S D F G H J K L (or @ # $ % & - + ( )) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp">
-                <Button style="@style/KeyStyle" android:id="@+id/key_a" android:text="A" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_s" android:text="S" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_d" android:text="D" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_f" android:text="F" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_g" android:text="G" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_h" android:text="H" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_j" android:text="J" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_k" android:text="K" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_l" android:text="L" />
+                android:paddingHorizontal="14dp">
+                <Button style="@style/KeyStyle" android:id="@+id/key_a" android:text="a" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_s" android:text="s" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_d" android:text="d" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_f" android:text="f" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_g" android:text="g" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_h" android:text="h" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_j" android:text="j" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_k" android:text="k" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_l" android:text="l" />
             </LinearLayout>
 
-            <!-- Row 3: Shift Z X C V B N M Backspace -->
+            <!-- Row 3: Shift / Symbol-Alt, Z X C V B N M, Backspace -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
                 <Button style="@style/ActionKeyStyle" android:id="@+id/key_shift" android:text="⇧" android:layout_weight="1.3" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_z" android:text="Z" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_x" android:text="X" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_c" android:text="C" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_v" android:text="V" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_b" android:text="B" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_n" android:text="N" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_m" android:text="M" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_z" android:text="z" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_x" android:text="x" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_c" android:text="c" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_v" android:text="v" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_b" android:text="b" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_n" android:text="n" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_m" android:text="m" />
                 <Button style="@style/ActionKeyStyle" android:id="@+id/key_backspace" android:text="⌫" android:layout_weight="1.3" />
             </LinearLayout>
 
-            <!-- Row 4: 123 Space Enter -->
+            <!-- Row 4: ?123, Comma, Space, Period, Enter -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
-                <Button style="@style/ActionKeyStyle" android:id="@+id/key_123" android:text="@string/key_123_label" android:layout_weight="2" />
+                <Button style="@style/ActionKeyStyle" android:id="@+id/key_123" android:text="@string/key_123_label" android:layout_weight="1.5" />
                 <Button style="@style/KeyStyle" android:id="@+id/key_comma" android:text="," android:layout_weight="1" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_space" android:text="Space" android:layout_weight="5" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_space" android:text="Space" android:layout_weight="4.5" />
                 <Button style="@style/KeyStyle" android:id="@+id/key_period" android:text="." android:layout_weight="1" />
-                <Button style="@style/ActionKeyStyle" android:id="@+id/key_enter" android:text="↵" android:layout_weight="2" />
+                <Button style="@style/EnterKeyStyle" android:id="@+id/key_enter" android:text="↵" android:layout_weight="2" />
             </LinearLayout>
 
         </LinearLayout>
@@ -237,7 +240,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Diagram Preview (Ready to Insert)"
+            android:text="✨ Diagram Generated — Ready to Insert"
             android:textAlignment="center"
             android:textColor="@color/key_text"
             android:textSize="12sp"
@@ -265,31 +268,33 @@
         <!-- Action Buttons: Approve (Green) & Discard (Red) -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="44dp"
             android:layout_marginTop="8dp"
             android:orientation="horizontal"
             android:gravity="center">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_discard"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:backgroundTint="@color/discard_red"
-                android:text="@string/discard"
+                app:cornerRadius="8dp"
+                android:text="✕ Discard"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textStyle="bold" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_approve"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginStart="6dp"
                 android:backgroundTint="@color/approve_green"
-                android:text="@string/approve"
+                app:cornerRadius="8dp"
+                android:text="✓ Insert Diagram"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textStyle="bold" />

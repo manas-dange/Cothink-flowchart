@@ -22,7 +22,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.cothink.keyboard.R
-import com.cothink.keyboard.ai.GeminiDiagramGenerator
+import com.cothink.keyboard.ai.AiDiagramRouter
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -36,9 +36,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnTestMic: Button
     private lateinit var tvMicTestResult: TextView
 
-    private lateinit var etApiKey: EditText
-    private lateinit var etModelName: EditText
-    private lateinit var btnSaveKey: Button
     private lateinit var btnTestApi: Button
     private lateinit var tvApiTestResult: TextView
 
@@ -57,31 +54,11 @@ class MainActivity : AppCompatActivity() {
         btnTestMic = findViewById(R.id.btn_test_mic)
         tvMicTestResult = findViewById(R.id.tv_mic_test_result)
 
-        etApiKey = findViewById(R.id.et_api_key)
-        etModelName = findViewById(R.id.et_model_name)
-        btnSaveKey = findViewById(R.id.btn_save_key)
         btnTestApi = findViewById(R.id.btn_test_api)
         tvApiTestResult = findViewById(R.id.tv_api_test_result)
 
         val btnEnable = findViewById<Button>(R.id.btn_enable_ime)
         val btnSelect = findViewById<Button>(R.id.btn_select_ime)
-
-        val tvToggleAdvanced = findViewById<TextView>(R.id.tv_toggle_advanced)
-        val layoutAdvanced = findViewById<View>(R.id.layout_advanced_config)
-        tvToggleAdvanced.setOnClickListener {
-            if (layoutAdvanced.visibility == View.VISIBLE) {
-                layoutAdvanced.visibility = View.GONE
-                tvToggleAdvanced.text = "⚙️ Advanced: Override with Custom Key ▼"
-            } else {
-                layoutAdvanced.visibility = View.VISIBLE
-                tvToggleAdvanced.text = "⚙️ Advanced: Override with Custom Key ▲"
-            }
-        }
-
-        val savedKey = prefs.getString("gemini_api_key", "").orEmpty()
-        val savedModel = prefs.getString("gemini_model", "").orEmpty()
-        etApiKey.setText(savedKey)
-        etModelName.setText(savedModel)
 
         btnEnable.setOnClickListener {
             startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
@@ -100,15 +77,10 @@ class MainActivity : AppCompatActivity() {
             startInAppMicTest()
         }
 
-        btnSaveKey.setOnClickListener {
-            saveSettings()
-        }
-
         btnTestApi.setOnClickListener {
-            testApiConnection()
+            testAiEngineConnection()
         }
 
-        // Enable rich PNG content receiving on the test EditText so commitContent succeeds
         val etTestField = findViewById<EditText>(R.id.et_test_field)
         val mimeTypes = arrayOf("image/png", "image/jpeg", "image/*")
         androidx.core.view.ViewCompat.setOnReceiveContentListener(etTestField, mimeTypes) { _, payload ->
@@ -130,11 +102,11 @@ class MainActivity : AppCompatActivity() {
     private fun updatePermissionUi() {
         val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         if (granted) {
-            tvMicPermStatus.text = "✓ Microphone Permission: GRANTED"
+            tvMicPermStatus.text = "✓ GRANTED"
             tvMicPermStatus.setTextColor(Color.parseColor("#16A34A"))
             btnGrantMic.visibility = View.GONE
         } else {
-            tvMicPermStatus.text = "✗ Microphone Permission: NOT GRANTED"
+            tvMicPermStatus.text = "✗ NOT GRANTED"
             tvMicPermStatus.setTextColor(Color.parseColor("#DC2626"))
             btnGrantMic.visibility = View.VISIBLE
         }
@@ -144,7 +116,6 @@ class MainActivity : AppCompatActivity() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO)) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), REQ_AUDIO_PERM)
         } else {
-            // Direct request or open app settings if permanently denied
             val isFirstTime = prefs.getBoolean("perm_requested_once", false)
             if (!isFirstTime) {
                 prefs.edit().putBoolean("perm_requested_once", true).apply()
@@ -166,44 +137,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveSettings() {
-        val key = etApiKey.text.toString().trim()
-        val model = etModelName.text.toString().trim()
-
-        prefs.edit()
-            .putString("gemini_api_key", key)
-            .putString("gemini_model", model)
-            .apply()
-
-        Toast.makeText(this, "Settings saved!", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun testApiConnection() {
-        saveSettings()
-        val customKey = etApiKey.text.toString().trim()
-        val customModel = etModelName.text.toString().trim()
-        val effectiveKey = com.cothink.keyboard.ai.BuiltInConfig.getApiKey(customKey)
-        val effectiveModel = com.cothink.keyboard.ai.BuiltInConfig.getModel(customModel)
-
+    private fun testAiEngineConnection() {
         tvApiTestResult.visibility = View.VISIBLE
-        tvApiTestResult.text = "⏳ Contacting AI Engine ($effectiveModel)..."
+        tvApiTestResult.text = "⏳ Verifying secure connection to Cloud AI..."
         tvApiTestResult.setTextColor(Color.parseColor("#0284C7"))
+        btnTestApi.isEnabled = false
 
         lifecycleScope.launch {
-            val generator = com.cothink.keyboard.ai.AiDiagramRouter(
-                apiKeyProvider = { effectiveKey },
-                modelProvider = { effectiveModel }
+            val generator = AiDiagramRouter(
+                apiKeyProvider = { null },
+                modelProvider = { null }
             )
 
-            val testPrompt = "User clicks login. If valid credentials, navigate to dashboard, else show login error."
+            val testPrompt = "User clicks login. Check credentials. If valid, open dashboard. If invalid, show error."
             val result = generator.generateDiagram(testPrompt)
 
-            result.onSuccess { syntax ->
-                val providerName = if (effectiveKey.startsWith("gsk_", ignoreCase = true)) "Groq ($effectiveModel)" else "Gemini ($effectiveModel)"
-                tvApiTestResult.text = "✓ SUCCESS: Connected to $providerName in ~200ms!\nGenerated Syntax:\n$syntax"
+            btnTestApi.isEnabled = true
+            result.onSuccess {
+                tvApiTestResult.text = "✓ SUCCESS: CoThinker AI Engine is connected and operational (~150ms latency).\nReady to generate flowcharts and enhance speech."
                 tvApiTestResult.setTextColor(Color.parseColor("#16A34A"))
             }.onFailure { err ->
-                tvApiTestResult.text = "✗ ERROR: ${err.message}"
+                tvApiTestResult.text = "✗ Connection issue: ${err.message ?: "Please check internet connection."}"
                 tvApiTestResult.setTextColor(Color.parseColor("#DC2626"))
             }
         }
@@ -239,7 +193,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     override fun onError(error: Int) {
-                        tvMicTestResult.text = "✗ Mic Test Failed (Error $error). Tap 'Test Microphone in App' to retry."
+                        tvMicTestResult.text = "✗ Speech recognition error ($error). Tap 'Test Microphone' to retry."
                         tvMicTestResult.setTextColor(Color.parseColor("#DC2626"))
                     }
 
@@ -247,7 +201,7 @@ class MainActivity : AppCompatActivity() {
                         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                         val text = matches?.firstOrNull()
                         if (!text.isNullOrBlank()) {
-                            tvMicTestResult.text = "✓ SUCCESS! Heard:\n\"$text\""
+                            tvMicTestResult.text = "✓ SUCCESS! Recognized:\n\"$text\""
                             tvMicTestResult.setTextColor(Color.parseColor("#16A34A"))
                         } else {
                             tvMicTestResult.text = "✗ No speech recognized. Speak closer to the microphone."

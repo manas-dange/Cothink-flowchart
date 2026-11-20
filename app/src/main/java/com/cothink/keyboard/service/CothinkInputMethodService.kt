@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.inputmethodservice.InputMethodService
 import android.net.Uri
 import android.os.Bundle
@@ -14,7 +16,6 @@ import android.speech.SpeechRecognizer
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -33,7 +34,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
@@ -59,6 +59,13 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var discardEnhancedButton: ImageButton
     private lateinit var enhanceButton: Button
     private lateinit var demoButton: Button
+
+    private lateinit var shiftButton: Button
+    private lateinit var mode123Button: Button
+    private val letterButtons = mutableMapOf<Int, Button>()
+
+    private var isSymbolsMode = false
+    private var isShifted = false
 
     private var currentImageUri: Uri? = null
     private var lastErrorMessage: String? = null
@@ -164,14 +171,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
         demoButton.setOnClickListener {
             val hostText = getHostFieldText().trim()
-            if (hostText.isNotBlank()) {
-                statusText.text = "🗣️ \"$hostText\""
-                processTranscript(hostText)
-            } else {
-                val samplePrompt = "User clicks login. Check database. If credentials valid, navigate to dashboard. If invalid, show error message."
-                statusText.text = "🗣️ \"$samplePrompt\""
-                processTranscript(samplePrompt)
-            }
+            generateDiagramFromText(hostText)
         }
 
         micButton.setOnClickListener {
@@ -263,6 +263,25 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         hideEnhancedPreview()
     }
 
+    private fun generateDiagramFromText(prompt: String) {
+        val query = prompt.trim().ifBlank {
+            "User clicks login. Check database. If credentials valid, navigate to dashboard. If invalid, show error message."
+        }
+        hideEnhancedPreview()
+        statusText.text = getString(R.string.generating)
+        progressBar.visibility = View.VISIBLE
+
+        serviceScope.launch {
+            val genResult = diagramGenerator.generateDiagram(query)
+            genResult.onSuccess { syntax ->
+                statusText.text = getString(R.string.rendering)
+                renderDiagram(syntax, query)
+            }.onFailure { err ->
+                resetStatus("AI error: ${err.message}")
+            }
+        }
+    }
+
     private fun isDiagramIntent(transcript: String): Boolean {
         val lower = transcript.lowercase()
         return lower.contains("flowchart") ||
@@ -273,26 +292,53 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
                lower.contains("generate a flow") ||
                lower.contains("create a flow") ||
                lower.contains("show a flow") ||
-               lower.contains("workflow diagram") ||
-               lower.contains("architecture diagram") ||
-               lower.contains("process flow")
+               lower.contains("workflow") ||
+               lower.contains("process flow") ||
+               lower.contains("draw a") ||
+               lower.contains("mindmap") ||
+               lower.contains("chart")
     }
 
     private fun setupKeyListeners(root: View) {
-        val keyCharMap = mapOf(
-            R.id.key_q to "q", R.id.key_w to "w", R.id.key_e to "e", R.id.key_r to "r",
-            R.id.key_t to "t", R.id.key_y to "y", R.id.key_u to "u", R.id.key_i to "i",
-            R.id.key_o to "o", R.id.key_p to "p", R.id.key_a to "a", R.id.key_s to "s",
-            R.id.key_d to "d", R.id.key_f to "f", R.id.key_g to "g", R.id.key_h to "h",
-            R.id.key_j to "j", R.id.key_k to "k", R.id.key_l to "l", R.id.key_z to "z",
-            R.id.key_x to "x", R.id.key_c to "c", R.id.key_v to "v", R.id.key_b to "b",
-            R.id.key_n to "n", R.id.key_m to "m", R.id.key_comma to ",", R.id.key_period to "."
+        shiftButton = root.findViewById(R.id.key_shift)
+        mode123Button = root.findViewById(R.id.key_123)
+
+        val keyIds = listOf(
+            R.id.key_q, R.id.key_w, R.id.key_e, R.id.key_r, R.id.key_t,
+            R.id.key_y, R.id.key_u, R.id.key_i, R.id.key_o, R.id.key_p,
+            R.id.key_a, R.id.key_s, R.id.key_d, R.id.key_f, R.id.key_g,
+            R.id.key_h, R.id.key_j, R.id.key_k, R.id.key_l,
+            R.id.key_z, R.id.key_x, R.id.key_c, R.id.key_v, R.id.key_b,
+            R.id.key_n, R.id.key_m, R.id.key_comma, R.id.key_period
         )
 
-        for ((id, char) in keyCharMap) {
-            root.findViewById<Button>(id)?.setOnClickListener {
-                currentInputConnection?.commitText(char, 1)
+        for (id in keyIds) {
+            root.findViewById<Button>(id)?.let { btn ->
+                letterButtons[id] = btn
+                btn.setOnClickListener {
+                    val charToCommit = btn.text.toString()
+                    currentInputConnection?.commitText(charToCommit, 1)
+                    if (isShifted && !isSymbolsMode) {
+                        isShifted = false
+                        updateKeyboardKeys()
+                    }
+                }
             }
+        }
+
+        shiftButton.setOnClickListener {
+            if (isSymbolsMode) {
+                currentInputConnection?.commitText("/", 1)
+            } else {
+                isShifted = !isShifted
+                updateKeyboardKeys()
+            }
+        }
+
+        mode123Button.setOnClickListener {
+            isSymbolsMode = !isSymbolsMode
+            isShifted = false
+            updateKeyboardKeys()
         }
 
         root.findViewById<Button>(R.id.key_space)?.setOnClickListener {
@@ -305,6 +351,91 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
         root.findViewById<Button>(R.id.key_enter)?.setOnClickListener {
             sendKeyChar('\n')
+        }
+
+        updateKeyboardKeys()
+    }
+
+    private fun updateKeyboardKeys() {
+        if (isSymbolsMode) {
+            mode123Button.text = "ABC"
+            shiftButton.text = "/"
+            shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#283548"))
+
+            letterButtons[R.id.key_q]?.text = "1"
+            letterButtons[R.id.key_w]?.text = "2"
+            letterButtons[R.id.key_e]?.text = "3"
+            letterButtons[R.id.key_r]?.text = "4"
+            letterButtons[R.id.key_t]?.text = "5"
+            letterButtons[R.id.key_y]?.text = "6"
+            letterButtons[R.id.key_u]?.text = "7"
+            letterButtons[R.id.key_i]?.text = "8"
+            letterButtons[R.id.key_o]?.text = "9"
+            letterButtons[R.id.key_p]?.text = "0"
+
+            letterButtons[R.id.key_a]?.text = "@"
+            letterButtons[R.id.key_s]?.text = "#"
+            letterButtons[R.id.key_d]?.text = "$"
+            letterButtons[R.id.key_f]?.text = "%"
+            letterButtons[R.id.key_g]?.text = "&"
+            letterButtons[R.id.key_h]?.text = "-"
+            letterButtons[R.id.key_j]?.text = "+"
+            letterButtons[R.id.key_k]?.text = "("
+            letterButtons[R.id.key_l]?.text = ")"
+
+            letterButtons[R.id.key_z]?.text = "*"
+            letterButtons[R.id.key_x]?.text = "\""
+            letterButtons[R.id.key_c]?.text = "'"
+            letterButtons[R.id.key_v]?.text = ":"
+            letterButtons[R.id.key_b]?.text = ";"
+            letterButtons[R.id.key_n]?.text = "!"
+            letterButtons[R.id.key_m]?.text = "?"
+
+            letterButtons[R.id.key_comma]?.text = "="
+            letterButtons[R.id.key_period]?.text = "."
+        } else {
+            mode123Button.text = "?123"
+            if (isShifted) {
+                shiftButton.text = "⇪"
+                shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#2563EB"))
+            } else {
+                shiftButton.text = "⇧"
+                shiftButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#283548"))
+            }
+
+            val caseTransform: (String) -> String = { if (isShifted) it.uppercase() else it.lowercase() }
+
+            letterButtons[R.id.key_q]?.text = caseTransform("q")
+            letterButtons[R.id.key_w]?.text = caseTransform("w")
+            letterButtons[R.id.key_e]?.text = caseTransform("e")
+            letterButtons[R.id.key_r]?.text = caseTransform("r")
+            letterButtons[R.id.key_t]?.text = caseTransform("t")
+            letterButtons[R.id.key_y]?.text = caseTransform("y")
+            letterButtons[R.id.key_u]?.text = caseTransform("u")
+            letterButtons[R.id.key_i]?.text = caseTransform("i")
+            letterButtons[R.id.key_o]?.text = caseTransform("o")
+            letterButtons[R.id.key_p]?.text = caseTransform("p")
+
+            letterButtons[R.id.key_a]?.text = caseTransform("a")
+            letterButtons[R.id.key_s]?.text = caseTransform("s")
+            letterButtons[R.id.key_d]?.text = caseTransform("d")
+            letterButtons[R.id.key_f]?.text = caseTransform("f")
+            letterButtons[R.id.key_g]?.text = caseTransform("g")
+            letterButtons[R.id.key_h]?.text = caseTransform("h")
+            letterButtons[R.id.key_j]?.text = caseTransform("j")
+            letterButtons[R.id.key_k]?.text = caseTransform("k")
+            letterButtons[R.id.key_l]?.text = caseTransform("l")
+
+            letterButtons[R.id.key_z]?.text = caseTransform("z")
+            letterButtons[R.id.key_x]?.text = caseTransform("x")
+            letterButtons[R.id.key_c]?.text = caseTransform("c")
+            letterButtons[R.id.key_v]?.text = caseTransform("v")
+            letterButtons[R.id.key_b]?.text = caseTransform("b")
+            letterButtons[R.id.key_n]?.text = caseTransform("n")
+            letterButtons[R.id.key_m]?.text = caseTransform("m")
+
+            letterButtons[R.id.key_comma]?.text = ","
+            letterButtons[R.id.key_period]?.text = "."
         }
     }
 
@@ -344,14 +475,13 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, defaultLocale)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-                // 1-minute (60,000 ms) speech listening limit
                 putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 60000L)
                 putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
                 putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
             }
 
             isListening = true
-            micButton.setColorFilter(android.graphics.Color.parseColor("#EF4444"))
+            micButton.setColorFilter(Color.parseColor("#EF4444"))
             statusText.text = "Listening (up to 1m)... Tap mic when done"
             progressBar.visibility = View.VISIBLE
             speechRecognizer?.startListening(intent)
@@ -378,17 +508,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
     private fun processTranscript(transcript: String) {
         if (isDiagramIntent(transcript)) {
-            statusText.text = getString(R.string.generating)
-            progressBar.visibility = View.VISIBLE
-            serviceScope.launch {
-                val genResult = diagramGenerator.generateDiagram(transcript)
-                genResult.onSuccess { syntax ->
-                    statusText.text = getString(R.string.rendering)
-                    renderDiagram(syntax, transcript)
-                }.onFailure { err ->
-                    resetStatus("AI error: ${err.message}")
-                }
-            }
+            generateDiagramFromText(transcript)
         } else {
             statusText.text = "✨ Polishing speech..."
             progressBar.visibility = View.VISIBLE

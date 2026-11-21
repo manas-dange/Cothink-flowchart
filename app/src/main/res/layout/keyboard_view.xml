@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/keyboard_root"
     android:layout_width="match_parent"
-    android:layout_height="285dp"
+    android:layout_height="305dp"
     android:background="#1A1C1E">
 
     <!-- Normal Typing & Voice Input Layout -->
@@ -17,106 +17,145 @@
         <!-- Top Action Strip / Enhanced Suggestion Strip Container -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="72dp"
             android:background="#1F2024">
 
-            <!-- Normal Top Bar: Mic, Status, Enhance, Flow, Ask -->
+            <!-- Normal Top Bar: Upper Status Bar + Lower Buttons Row -->
             <LinearLayout
                 android:id="@+id/layout_normal_top_bar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:paddingHorizontal="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
                 android:visibility="visible">
 
-                <ImageButton
-                    android:id="@+id/btn_mic"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_mic_button"
-                    android:contentDescription="Voice Input"
-                    android:src="@drawable/ic_mic"
-                    app:tint="@color/white" />
-
-                <TextView
-                    android:id="@+id/tv_status"
-                    android:layout_width="0dp"
+                <!-- Upper Status / Recording / Parsing Bar with Word Wrap -->
+                <LinearLayout
+                    android:id="@+id/layout_status_bar"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="4dp"
-                    android:text="Tap mic or Enhance"
-                    android:textColor="#C4C6D0"
-                    android:textSize="11sp"
-                    android:ellipsize="marquee"
-                    android:singleLine="true"
-                    android:clickable="true"
-                    android:focusable="true" />
+                    android:minHeight="26dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:background="@drawable/bg_status_strip">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_enhance"
-                    android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:layout_marginEnd="6dp"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="0dp"
-                    android:text="Enhance"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    app:icon="@drawable/ic_sparkle"
-                    app:iconSize="14dp"
-                    app:iconTint="@color/white"
-                    app:cornerRadius="17dp"
-                    android:backgroundTint="#2563EB"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
+                    <ImageView
+                        android:id="@+id/iv_status_indicator"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="6dp"
+                        android:src="@drawable/ic_sparkle"
+                        app:tint="#60A5FA" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_demo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:layout_marginEnd="6dp"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="0dp"
-                    android:text="Flow"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    app:icon="@drawable/ic_flow"
-                    app:iconSize="14dp"
-                    app:iconTint="@color/white"
-                    app:cornerRadius="17dp"
-                    android:backgroundTint="#059669"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
+                    <TextView
+                        android:id="@+id/tv_status"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tap mic or Enhance"
+                        android:textColor="#E2E8F0"
+                        android:textSize="11.5sp"
+                        android:lineSpacingExtra="1dp"
+                        android:singleLine="false"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:clickable="true"
+                        android:focusable="true" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_ask"
-                    android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="0dp"
-                    android:text="Ask"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    app:icon="@drawable/ic_lightbulb"
-                    app:iconSize="14dp"
-                    app:iconTint="@color/white"
-                    app:cornerRadius="17dp"
-                    android:backgroundTint="#6366F1"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
+                    <ProgressBar
+                        android:id="@+id/progress_loading"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="6dp"
+                        android:visibility="gone"
+                        android:indeterminate="true" />
 
-                <ProgressBar
-                    android:id="@+id/progress_loading"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_marginStart="4dp"
-                    android:visibility="gone"
-                    android:indeterminate="true" />
+                </LinearLayout>
+
+                <!-- Lower Buttons Row: Mic, Enhance, Flow, Ask -->
+                <LinearLayout
+                    android:id="@+id/layout_top_buttons"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="3dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageButton
+                        android:id="@+id/btn_mic"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:background="@drawable/bg_mic_button"
+                        android:contentDescription="Voice Input"
+                        android:src="@drawable/ic_mic"
+                        app:tint="@color/white" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_enhance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="6dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="0dp"
+                        android:text="Enhance"
+                        android:textSize="12sp"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        app:icon="@drawable/ic_sparkle"
+                        app:iconSize="14dp"
+                        app:iconTint="@color/white"
+                        app:cornerRadius="17dp"
+                        android:backgroundTint="#2563EB"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_demo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="6dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="0dp"
+                        android:text="Flow"
+                        android:textSize="12sp"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        app:icon="@drawable/ic_flow"
+                        app:iconSize="14dp"
+                        app:iconTint="@color/white"
+                        app:cornerRadius="17dp"
+                        android:backgroundTint="#059669"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_ask"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="0dp"
+                        android:text="Ask"
+                        android:textSize="12sp"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        app:icon="@drawable/ic_lightbulb"
+                        app:iconSize="14dp"
+                        app:iconTint="@color/white"
+                        app:cornerRadius="17dp"
+                        android:backgroundTint="#6366F1"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
@@ -145,9 +184,10 @@
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
                     android:textColor="#F8FAFC"
-                    android:textSize="13sp"
-                    android:ellipsize="marquee"
-                    android:singleLine="true" />
+                    android:textSize="12.5sp"
+                    android:singleLine="false"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
 
                 <ImageButton
                     android:id="@+id/btn_apply_enhanced"
@@ -860,7 +900,10 @@
                     android:text="Tap mic to speak your thought..."
                     android:textColor="#CBD5E1"
                     android:textSize="11.5sp"
-                    android:singleLine="true" />
+                    android:lineSpacingExtra="1dp"
+                    android:singleLine="false"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
 
                 <ProgressBar
                     android:id="@+id/progress_session"

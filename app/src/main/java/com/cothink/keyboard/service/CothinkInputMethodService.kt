@@ -1459,7 +1459,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
     private fun resetStatus(message: String) {
         lastErrorMessage = message
-        statusText.text = if (message.length > 32) "${message.take(28)}... (tap for info)" else message
+        statusText.text = message
         progressBar.visibility = View.GONE
     }
 

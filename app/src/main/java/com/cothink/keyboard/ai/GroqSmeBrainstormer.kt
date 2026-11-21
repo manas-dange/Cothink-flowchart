@@ -28,11 +28,12 @@ class GroqSmeBrainstormer(
         const val SYSTEM_PROMPT = """You are an elite, on-demand Subject Matter Expert (SME) and strategic thinking partner.
 You analyze user topics, questions, or draft thoughts and provide sharp, senior-level insights.
 
-RULES:
-1. AUTO-DETECT DOMAIN: Instantly determine the domain of the query (e.g., Software Engineering, System Architecture, Business Strategy, Product Design, Marketing, Finance, Law, Science).
-2. SENIOR PRACTITIONER TONE: Speak as a seasoned specialist in that field. Provide actionable frameworks, high-signal points, critical trade-offs, or non-obvious angles.
-3. CONCISE & STRUCTURED: Keep your response punchy and well-structured with clear bullet points or short paragraphs. Avoid walls of text.
-4. ZERO FLUFF: Do NOT include conversational greetings ("Sure, I can help with that!", "Hello!"), pleasantries, or closing filler ("Let me know if you need more info"). Output ONLY the substantive expert insights ready to be pasted or reviewed.
+CRITICAL FORMATTING & CONTENT RULES:
+1. STRICTLY CONCISE (UNDER 300 WORDS): Output must be dense, punchy, and strictly under 300 words (maximum 400 words). Focus only on the top 3 to 5 highest-signal insights or action steps. Never write an essay.
+2. NO TABLES: NEVER use markdown tables (| col | col |). Tables break mobile chat screens. Use clean bullet points (-) or numbered steps (1.) only.
+3. NO PREAMBLE OR CLOSING REMARKS: Do NOT include intro titles, topic restatements, or closing summaries (never write "Bottom line:", "In conclusion:", "Summary:"). Start immediately with your first substantive point and end with your final point.
+4. NO QUESTIONS OR CLARIFICATIONS: The user will paste this text directly into a chat. Never ask questions back, never ask for clarification, and never offer follow-up choices. Make the best executive assumption and deliver the insight directly.
+5. DOMAIN EXPERT TONE: Automatically adopt the persona of a seasoned senior specialist in the relevant domain (Tech, Strategy, Finance, Legal, etc.). Provide critical trade-offs and non-obvious angles.
 """
 
         fun sanitizeResponse(raw: String): String {
@@ -40,7 +41,68 @@ RULES:
             if (text.startsWith("\"") && text.endsWith("\"") && text.length > 2) {
                 text = text.substring(1, text.length - 1).trim()
             }
-            return text
+
+            val lines = text.lines().toMutableList()
+
+            // 1. Remove leading single-word headers or dashes (e.g. "Acquisition\n---")
+            while (lines.isNotEmpty()) {
+                val first = lines.first().trim()
+                if (first.startsWith("---") || first.startsWith("===") || first.isEmpty()) {
+                    lines.removeAt(0)
+                } else if (lines.size > 1 && (lines[1].trim().startsWith("---") || lines[1].trim().startsWith("==="))) {
+                    lines.removeAt(0) // remove title
+                    lines.removeAt(0) // remove separator
+                } else {
+                    break
+                }
+            }
+
+            // 2. Remove closing summary / bottom-line lines
+            while (lines.isNotEmpty()) {
+                val last = lines.last().trim()
+                val lower = last.lowercase()
+                if (lower.isEmpty() ||
+                    lower.startsWith("---") ||
+                    lower.startsWith("**bottom line") ||
+                    lower.startsWith("bottom line") ||
+                    lower.startsWith("**in summary") ||
+                    lower.startsWith("in summary") ||
+                    lower.startsWith("**conclusion") ||
+                    lower.startsWith("conclusion:") ||
+                    lower.startsWith("let me know") ||
+                    lower.startsWith("would you like") ||
+                    lower.startsWith("feel free") ||
+                    lower.startsWith("hope this helps") ||
+                    lower.startsWith("if you have questions")
+                ) {
+                    lines.removeAt(lines.size - 1)
+                } else {
+                    break
+                }
+            }
+
+            // 3. Convert any accidental markdown table lines into clean bullet points
+            val cleanedLines = mutableListOf<String>()
+            for (line in lines) {
+                val trimmed = line.trim()
+                if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+                    if (trimmed.contains("---")) continue // separator row
+                    val cells = trimmed.split("|")
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                    if (cells.isNotEmpty()) {
+                        if (cells.size == 1) {
+                            cleanedLines.add("• ${cells[0]}")
+                        } else {
+                            cleanedLines.add("• ${cells[0]}: ${cells.drop(1).joinToString(" - ")}")
+                        }
+                    }
+                } else {
+                    cleanedLines.add(line)
+                }
+            }
+
+            return cleanedLines.joinToString("\n").trim()
         }
     }
 
@@ -78,8 +140,8 @@ RULES:
                 val requestJson = JSONObject().apply {
                     put("model", modelName)
                     put("messages", messagesArray)
-                    put("temperature", 0.3)
-                    put("max_tokens", 1024)
+                    put("temperature", 0.2)
+                    put("max_tokens", 500) // Strictly caps length to under 400 words
                 }
 
                 val body = requestJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())

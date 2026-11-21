@@ -57,18 +57,18 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_enhance"
                     android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:layout_marginEnd="4dp"
-                    android:paddingHorizontal="8dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="6dp"
+                    android:paddingHorizontal="12dp"
                     android:paddingVertical="0dp"
                     android:text="Enhance"
-                    android:textSize="10.5sp"
+                    android:textSize="12sp"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     app:icon="@drawable/ic_sparkle"
-                    app:iconSize="13dp"
+                    app:iconSize="14dp"
                     app:iconTint="@color/white"
-                    app:cornerRadius="15dp"
+                    app:cornerRadius="17dp"
                     android:backgroundTint="#2563EB"
                     android:minWidth="0dp"
                     android:minHeight="0dp" />
@@ -76,18 +76,18 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_demo"
                     android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:layout_marginEnd="4dp"
-                    android:paddingHorizontal="8dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="6dp"
+                    android:paddingHorizontal="12dp"
                     android:paddingVertical="0dp"
                     android:text="Flow"
-                    android:textSize="10.5sp"
+                    android:textSize="12sp"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     app:icon="@drawable/ic_flow"
-                    app:iconSize="13dp"
+                    app:iconSize="14dp"
                     app:iconTint="@color/white"
-                    app:cornerRadius="15dp"
+                    app:cornerRadius="17dp"
                     android:backgroundTint="#059669"
                     android:minWidth="0dp"
                     android:minHeight="0dp" />
@@ -95,17 +95,17 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_ask"
                     android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:paddingHorizontal="8dp"
+                    android:layout_height="34dp"
+                    android:paddingHorizontal="12dp"
                     android:paddingVertical="0dp"
                     android:text="Ask"
-                    android:textSize="10.5sp"
+                    android:textSize="12sp"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     app:icon="@drawable/ic_lightbulb"
-                    app:iconSize="13dp"
+                    app:iconSize="14dp"
                     app:iconTint="@color/white"
-                    app:cornerRadius="15dp"
+                    app:cornerRadius="17dp"
                     android:backgroundTint="#6366F1"
                     android:minWidth="0dp"
                     android:minHeight="0dp" />
@@ -506,11 +506,11 @@
         <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="32dp"
+            android:layout_height="42dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="4dp"
-            android:paddingBottom="4dp">
+            android:paddingBottom="2dp">
 
             <ImageView
                 android:layout_width="18dp"
@@ -529,18 +529,18 @@
                 android:textSize="13sp"
                 android:fontFamily="sans-serif-medium" />
 
-            <!-- Mode Switch Chips -->
+            <!-- Mode Switch Chips (Enlarged to match 34dp buttons) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_mode_quick"
                 android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:paddingHorizontal="10dp"
+                android:layout_height="34dp"
+                android:paddingHorizontal="13dp"
                 android:paddingVertical="0dp"
                 android:text="Quick"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                app:cornerRadius="14dp"
+                app:cornerRadius="17dp"
                 android:backgroundTint="#4F46E5"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
@@ -548,24 +548,24 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_mode_live"
                 android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:layout_marginStart="4dp"
+                android:layout_height="34dp"
+                android:layout_marginStart="6dp"
                 android:layout_marginEnd="6dp"
-                android:paddingHorizontal="10dp"
+                android:paddingHorizontal="13dp"
                 android:paddingVertical="0dp"
                 android:text="Live Voice"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textAllCaps="false"
                 android:textColor="#94A3B8"
-                app:cornerRadius="14dp"
+                app:cornerRadius="17dp"
                 android:backgroundTint="#2D3035"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
 
             <ImageButton
                 android:id="@+id/btn_close_brainstorm"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Close"
                 android:src="@drawable/ic_close"

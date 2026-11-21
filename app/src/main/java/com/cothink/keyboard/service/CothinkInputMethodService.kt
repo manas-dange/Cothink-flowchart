@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.inputmethodservice.InputMethodService
 import android.net.Uri
 import android.os.Bundle
@@ -14,6 +15,8 @@ import android.os.IBinder
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -164,6 +167,10 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private var currentEnhancedText: String? = null
     private var currentBrainstormText: String? = null
 
+    // Text-to-Speech for Live Voice Assistant
+    private var tts: TextToSpeech? = null
+    private var isTtsReady = false
+
     private val diagramGenerator by lazy {
         val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
         com.cothink.keyboard.ai.AiDiagramRouter(
@@ -205,6 +212,44 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         super.onCreate()
         val intent = Intent(this, MermaidRenderService::class.java)
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        initTts()
+    }
+
+    private fun initTts() {
+        try {
+            tts = TextToSpeech(applicationContext) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    val result = tts?.setLanguage(Locale.getDefault())
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        tts?.setLanguage(Locale.US)
+                    }
+                    isTtsReady = true
+                }
+            }
+        } catch (_: Exception) {
+            isTtsReady = false
+        }
+    }
+
+    private fun speakText(text: String) {
+        if (!isTtsReady || tts == null) return
+        val clean = text.replace("**", "").replace("*", "").trim()
+        if (clean.isBlank()) return
+        try {
+            tts?.stop()
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                tts?.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "live_voice_reply")
+            } else {
+                @Suppress("DEPRECATION")
+                tts?.speak(clean, TextToSpeech.QUEUE_FLUSH, null)
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun stopTts() {
+        try {
+            tts?.stop()
+        } catch (_: Exception) {}
     }
 
     override fun onCreateInputView(): View {
@@ -440,6 +485,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun switchBrainstormMode(isLive: Boolean) {
+        stopTts()
         if (isLive) {
             modeLiveButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#4F46E5"))
             modeLiveButton.setTextColor(Color.WHITE)
@@ -510,6 +556,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun clearSession() {
+        stopTts()
         sessionHistory.clear()
         chatBubblesLayout.removeAllViews()
         sessionStatusText.text = "Session reset. Tap mic to start speaking."
@@ -517,6 +564,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun handleSessionSpeechResult(transcript: String) {
+        stopTts()
         sessionStatusText.text = "SME is analyzing..."
         sessionProgressBar.visibility = View.VISIBLE
         addChatBubble("user", transcript)
@@ -529,6 +577,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
                 sessionHistory.add(ChatTurn(role = "assistant", content = reply))
                 addChatBubble("assistant", reply)
                 sessionStatusText.text = "Tap mic to speak your next thought"
+                speakText(reply)
             }.onFailure { err ->
                 sessionStatusText.text = "Error: ${err.message}"
             }
@@ -621,10 +670,12 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun displayBrainstormResult(rawText: String) {
-        currentBrainstormText = rawText
+        // Strip markdown asterisks completely to guarantee clean text
+        val cleanRawText = rawText.replace("**", "").replace("*", "").trim()
+        currentBrainstormText = cleanRawText
         layoutBrainstormCards.removeAllViews()
 
-        if (rawText.isBlank()) {
+        if (cleanRawText.isBlank()) {
             val placeholder = TextView(this).apply {
                 text = "Enter a topic above or tap a starter chip to brainstorm with your SME."
                 setTextColor(Color.parseColor("#94A3B8"))
@@ -636,7 +687,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
 
         // Split text into pointer/concept lines or paragraphs
-        val lines = rawText.lines()
+        val lines = cleanRawText.lines()
             .map { it.trim() }
             .filter { it.isNotBlank() }
 
@@ -667,62 +718,123 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
 
         if (concepts.isEmpty()) {
-            concepts.add(rawText.trim())
+            concepts.add(cleanRawText)
         }
 
-        for (concept in concepts) {
-            val itemLayout = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    setMargins(0, dpToPx(3), 0, dpToPx(6))
-                }
-            }
-
+        for ((index, concept) in concepts.withIndex()) {
             val cleanConcept = concept.replaceFirst(Regex("^[-•*]\\s*"), "")
                 .replaceFirst(Regex("^\\d+\\.\\s*"), "")
+                .replace("**", "")
+                .replace("*", "")
                 .trim()
 
-            if (cleanConcept.contains(":")) {
-                val parts = cleanConcept.split(":", limit = 2)
-                val mainPoint = parts[0].trim()
-                val explanation = parts[1].trim()
+            val isTopPoint = (index == 0)
 
-                // Highlighted Main Point
-                val titleView = TextView(this).apply {
-                    text = "• $mainPoint:"
-                    textSize = 12.5f
-                    setTextColor(Color.parseColor("#60A5FA")) // Highlighted main point
-                    setTypeface(null, Typeface.BOLD)
-                    setTextIsSelectable(true)
+            if (isTopPoint) {
+                // HIGHLIGHTED TOP / MOST IMPORTANT POINT IN SOFT PASTEL CARD
+                val pastelCard = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    background = GradientDrawable().apply {
+                        cornerRadius = dpToPx(10).toFloat()
+                        setColor(Color.parseColor("#EEF2FF")) // Soft light pastel indigo/blue
+                    }
+                    setPadding(dpToPx(10), dpToPx(8), dpToPx(10), dpToPx(10))
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        setMargins(0, dpToPx(2), 0, dpToPx(8))
+                    }
                 }
 
-                // Normal Plain Explanation (like before)
-                val descView = TextView(this).apply {
-                    text = explanation
-                    textSize = 12f
-                    setTextColor(Color.parseColor("#F8FAFC")) // Normal text like before
-                    setLineSpacing(3f, 1f)
-                    setPadding(dpToPx(12), dpToPx(2), 0, 0)
-                    setTextIsSelectable(true)
+                if (cleanConcept.contains(":")) {
+                    val parts = cleanConcept.split(":", limit = 2)
+                    val mainPoint = parts[0].trim()
+                    val explanation = parts[1].trim()
+
+                    val badgeView = TextView(this).apply {
+                        text = "★ KEY TAKEAWAY: $mainPoint"
+                        textSize = 12.5f
+                        setTextColor(Color.parseColor("#4338CA")) // Deep Indigo on pastel background
+                        setTypeface(null, Typeface.BOLD)
+                        setTextIsSelectable(true)
+                    }
+
+                    val descView = TextView(this).apply {
+                        text = explanation
+                        textSize = 12f
+                        setTextColor(Color.parseColor("#0F172A")) // Crisp dark slate text
+                        setLineSpacing(3f, 1f)
+                        setPadding(0, dpToPx(3), 0, 0)
+                        setTextIsSelectable(true)
+                    }
+
+                    pastelCard.addView(badgeView)
+                    pastelCard.addView(descView)
+                } else {
+                    val fullView = TextView(this).apply {
+                        text = "★ KEY TAKEAWAY: $cleanConcept"
+                        textSize = 12.5f
+                        setTextColor(Color.parseColor("#0F172A")) // Dark slate on pastel
+                        setLineSpacing(3f, 1f)
+                        setTypeface(null, Typeface.BOLD)
+                        setTextIsSelectable(true)
+                    }
+                    pastelCard.addView(fullView)
                 }
 
-                itemLayout.addView(titleView)
-                itemLayout.addView(descView)
+                layoutBrainstormCards.addView(pastelCard)
             } else {
-                val fullView = TextView(this).apply {
-                    text = if (concepts.size > 1) "• $cleanConcept" else cleanConcept
-                    textSize = 12.5f
-                    setTextColor(Color.parseColor("#F8FAFC")) // Normal text like before
-                    setLineSpacing(3f, 1f)
-                    setTextIsSelectable(true)
+                // NORMAL / PLAIN LIKE BEFORE
+                val itemLayout = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        setMargins(0, dpToPx(2), 0, dpToPx(6))
+                    }
                 }
-                itemLayout.addView(fullView)
-            }
 
-            layoutBrainstormCards.addView(itemLayout)
+                if (cleanConcept.contains(":")) {
+                    val parts = cleanConcept.split(":", limit = 2)
+                    val mainPoint = parts[0].trim()
+                    val explanation = parts[1].trim()
+
+                    // Highlighted Main Point title in blue
+                    val titleView = TextView(this).apply {
+                        text = "• $mainPoint:"
+                        textSize = 12.5f
+                        setTextColor(Color.parseColor("#60A5FA")) // Highlighted blue title
+                        setTypeface(null, Typeface.BOLD)
+                        setTextIsSelectable(true)
+                    }
+
+                    // Normal Plain Explanation
+                    val descView = TextView(this).apply {
+                        text = explanation
+                        textSize = 12f
+                        setTextColor(Color.parseColor("#F8FAFC")) // Normal plain off-white text
+                        setLineSpacing(3f, 1f)
+                        setPadding(dpToPx(12), dpToPx(2), 0, 0)
+                        setTextIsSelectable(true)
+                    }
+
+                    itemLayout.addView(titleView)
+                    itemLayout.addView(descView)
+                } else {
+                    val fullView = TextView(this).apply {
+                        text = "• $cleanConcept"
+                        textSize = 12.5f
+                        setTextColor(Color.parseColor("#F8FAFC")) // Normal text like before
+                        setLineSpacing(3f, 1f)
+                        setTextIsSelectable(true)
+                    }
+                    itemLayout.addView(fullView)
+                }
+
+                layoutBrainstormCards.addView(itemLayout)
+            }
         }
 
         scrollBrainstormResult.post {
@@ -737,6 +849,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun hideBrainstormPanel() {
+        stopTts()
         if (isListening && currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
             stopVoiceCapture()
         }
@@ -1099,6 +1212,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun startVoiceCapture(target: VoiceTarget = VoiceTarget.NORMAL) {
+        stopTts()
         if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
             != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
@@ -1416,6 +1530,11 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     override fun onEvent(eventType: Int, params: Bundle?) {}
 
     override fun onDestroy() {
+        stopTts()
+        try {
+            tts?.shutdown()
+            tts = null
+        } catch (_: Exception) {}
         if (isRenderBound) {
             unbindService(serviceConnection)
             isRenderBound = false

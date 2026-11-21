@@ -16,6 +16,8 @@ import android.speech.SpeechRecognizer
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
+import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -28,8 +30,10 @@ import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import com.google.android.material.button.MaterialButton
 import com.cothink.keyboard.R
+import com.cothink.keyboard.ai.GroqSmeBrainstormer
 import com.cothink.keyboard.ai.GroqTextEnhancer
 import com.cothink.keyboard.ai.MermaidSanitizer
+import com.cothink.keyboard.ai.SmeBrainstormer
 import com.cothink.keyboard.ai.TextEnhancer
 import com.cothink.keyboard.renderer.MermaidRenderService
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +65,24 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var discardEnhancedButton: ImageButton
     private lateinit var enhanceButton: Button
     private lateinit var demoButton: Button
+    private lateinit var askButton: Button
+
+    // Brainstorm / SME Panel Views
+    private lateinit var brainstormPanelLayout: LinearLayout
+    private lateinit var brainstormHeaderText: TextView
+    private lateinit var closeBrainstormButton: ImageButton
+    private lateinit var brainstormQueryInput: EditText
+    private lateinit var brainstormSendButton: ImageButton
+    private lateinit var brainstormChipsScroll: HorizontalScrollView
+    private lateinit var brainstormResultText: TextView
+    private lateinit var brainstormProgressBar: ProgressBar
+    private lateinit var copyBrainstormButton: Button
+    private lateinit var insertBrainstormButton: Button
+
+    private lateinit var chipProsCons: Button
+    private lateinit var chipStrategy: Button
+    private lateinit var chipCounterargs: Button
+    private lateinit var chipExplain: Button
 
     private lateinit var shiftButton: MaterialButton
     private lateinit var backspaceButton: MaterialButton
@@ -74,6 +96,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private var lastErrorMessage: String? = null
     private var isListening = false
     private var currentEnhancedText: String? = null
+    private var currentBrainstormText: String? = null
 
     private val diagramGenerator by lazy {
         val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
@@ -86,6 +109,14 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private val textEnhancer: TextEnhancer by lazy {
         val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
         GroqTextEnhancer(
+            apiKeyProvider = { prefs.getString("gemini_api_key", null) },
+            modelProvider = { prefs.getString("gemini_model", null) }
+        )
+    }
+
+    private val smeBrainstormer: SmeBrainstormer by lazy {
+        val prefs = getSharedPreferences("cothink_prefs", Context.MODE_PRIVATE)
+        GroqSmeBrainstormer(
             apiKeyProvider = { prefs.getString("gemini_api_key", null) },
             modelProvider = { prefs.getString("gemini_model", null) }
         )
@@ -133,6 +164,24 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         discardEnhancedButton = view.findViewById(R.id.btn_discard_enhanced)
         enhanceButton = view.findViewById(R.id.btn_enhance)
         demoButton = view.findViewById(R.id.btn_demo)
+        askButton = view.findViewById(R.id.btn_ask)
+
+        // Brainstorm Panel
+        brainstormPanelLayout = view.findViewById(R.id.brainstorm_panel_layout)
+        brainstormHeaderText = view.findViewById(R.id.tv_brainstorm_header)
+        closeBrainstormButton = view.findViewById(R.id.btn_close_brainstorm)
+        brainstormQueryInput = view.findViewById(R.id.et_brainstorm_query)
+        brainstormSendButton = view.findViewById(R.id.btn_brainstorm_send)
+        brainstormChipsScroll = view.findViewById(R.id.scroll_brainstorm_chips)
+        brainstormResultText = view.findViewById(R.id.tv_brainstorm_result)
+        brainstormProgressBar = view.findViewById(R.id.progress_brainstorm)
+        copyBrainstormButton = view.findViewById(R.id.btn_copy_brainstorm)
+        insertBrainstormButton = view.findViewById(R.id.btn_insert_brainstorm)
+
+        chipProsCons = view.findViewById(R.id.chip_pros_cons)
+        chipStrategy = view.findViewById(R.id.chip_strategy)
+        chipCounterargs = view.findViewById(R.id.chip_counterargs)
+        chipExplain = view.findViewById(R.id.chip_explain)
 
         setupKeyListeners(view)
         setupVoiceAndPreviewListeners(view)
@@ -143,6 +192,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         hideEnhancedPreview()
+        hideBrainstormPanel()
     }
 
     private fun setupVoiceAndPreviewListeners(view: View) {
@@ -177,6 +227,57 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             generateDiagramFromText(hostText)
         }
 
+        askButton.setOnClickListener {
+            handleAskButtonClick()
+        }
+
+        closeBrainstormButton.setOnClickListener {
+            hideBrainstormPanel()
+        }
+
+        copyBrainstormButton.setOnClickListener {
+            copyBrainstormToClipboard()
+        }
+
+        insertBrainstormButton.setOnClickListener {
+            insertBrainstormIntoChat()
+        }
+
+        brainstormSendButton.setOnClickListener {
+            val query = brainstormQueryInput.text.toString().trim()
+            if (query.isNotBlank()) {
+                executeBrainstorm(query)
+            }
+        }
+
+        brainstormQueryInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) {
+                val query = brainstormQueryInput.text.toString().trim()
+                if (query.isNotBlank()) {
+                    executeBrainstorm(query)
+                }
+                true
+            } else {
+                false
+            }
+        }
+
+        chipProsCons.setOnClickListener {
+            triggerBrainstormWithPrefix("Pros and cons of")
+        }
+
+        chipStrategy.setOnClickListener {
+            triggerBrainstormWithPrefix("Key strategic advice and actions for")
+        }
+
+        chipCounterargs.setOnClickListener {
+            triggerBrainstormWithPrefix("Counterarguments and blind spots regarding")
+        }
+
+        chipExplain.setOnClickListener {
+            triggerBrainstormWithPrefix("Explain simply like an expert:")
+        }
+
         micButton.setOnClickListener {
             if (isListening) {
                 isListening = false
@@ -200,6 +301,75 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
         discardButton.setOnClickListener {
             resetToKeyboard()
+        }
+    }
+
+    private fun handleAskButtonClick() {
+        val hostText = getHostFieldText().trim()
+        showBrainstormPanel()
+        if (hostText.isNotBlank()) {
+            brainstormQueryInput.setText(hostText)
+            executeBrainstorm(hostText)
+        } else {
+            brainstormQueryInput.setText("")
+            brainstormResultText.text = "Enter a topic above or tap a starter chip to brainstorm with your SME."
+            brainstormProgressBar.visibility = View.GONE
+        }
+    }
+
+    private fun triggerBrainstormWithPrefix(prefix: String) {
+        val existing = brainstormQueryInput.text.toString().trim()
+        val query = if (existing.isNotBlank()) "$prefix: $existing" else prefix
+        brainstormQueryInput.setText(query)
+        brainstormQueryInput.setSelection(query.length)
+        if (existing.isNotBlank()) {
+            executeBrainstorm(query)
+        }
+    }
+
+    private fun executeBrainstorm(query: String) {
+        if (query.isBlank()) return
+        brainstormProgressBar.visibility = View.VISIBLE
+        brainstormResultText.text = "Consulting Subject Matter Expert..."
+
+        serviceScope.launch {
+            val result = smeBrainstormer.brainstorm(query)
+            brainstormProgressBar.visibility = View.GONE
+            result.onSuccess { output ->
+                currentBrainstormText = output
+                brainstormResultText.text = output
+            }.onFailure { err ->
+                brainstormResultText.text = "Error: ${err.message}"
+            }
+        }
+    }
+
+    private fun showBrainstormPanel() {
+        normalLayout.visibility = View.GONE
+        previewLayout.visibility = View.GONE
+        brainstormPanelLayout.visibility = View.VISIBLE
+    }
+
+    private fun hideBrainstormPanel() {
+        brainstormPanelLayout.visibility = View.GONE
+        normalLayout.visibility = View.VISIBLE
+    }
+
+    private fun insertBrainstormIntoChat() {
+        val text = currentBrainstormText
+        if (!text.isNullOrBlank()) {
+            currentInputConnection?.commitText(text, 1)
+        }
+        hideBrainstormPanel()
+    }
+
+    private fun copyBrainstormToClipboard() {
+        val text = currentBrainstormText ?: brainstormResultText.text.toString()
+        if (text.isNotBlank()) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("SME Brainstorm", text)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -271,6 +441,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             "User clicks login. Check database. If credentials valid, navigate to dashboard. If invalid, show error message."
         }
         hideEnhancedPreview()
+        hideBrainstormPanel()
         statusText.text = getString(R.string.generating)
         progressBar.visibility = View.VISIBLE
 
@@ -561,6 +732,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         currentImageUri = uri
         progressBar.visibility = View.GONE
         normalLayout.visibility = View.GONE
+        brainstormPanelLayout.visibility = View.GONE
         previewLayout.visibility = View.VISIBLE
 
         try {
@@ -643,6 +815,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private fun resetToKeyboard() {
         currentImageUri = null
         previewLayout.visibility = View.GONE
+        brainstormPanelLayout.visibility = View.GONE
         normalLayout.visibility = View.VISIBLE
         hideEnhancedPreview()
         resetStatus("Tap mic or Enhance")
@@ -667,7 +840,8 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             SpeechRecognizer.ERROR_SERVER -> "Speech server error. Please retry."
             SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "Please wait a moment before tapping mic."
             SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "Language not supported by speech engine."
-            10 -> "Speech service not configured on emulator. Tap 'Flow' button to test."
+            11 -> "Microphone unavailable or in use by another app (e.g. call). Tap mic to retry."
+            13 -> "Language model unavailable offline. Check internet connection."
             else -> "Voice error ($error). Tap mic to retry."
         }
         speechRecognizer?.cancel()

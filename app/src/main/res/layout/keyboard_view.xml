@@ -382,10 +382,43 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:text="Subject Matter Expert"
+                android:text="SME Brainstorm"
                 android:textColor="#F8FAFC"
                 android:textSize="13sp"
                 android:fontFamily="sans-serif-medium" />
+
+            <!-- Mode Switch Chips -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_mode_quick"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="0dp"
+                android:text="Quick"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                app:cornerRadius="12dp"
+                android:backgroundTint="#4F46E5"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_mode_live"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="6dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="0dp"
+                android:text="Live Voice"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:textColor="#94A3B8"
+                app:cornerRadius="12dp"
+                android:backgroundTint="#2D3035"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
 
             <ImageButton
                 android:id="@+id/btn_close_brainstorm"
@@ -398,198 +431,316 @@
 
         </LinearLayout>
 
-        <!-- Inline Prompt Input Box (Shown when user wants to query or chat bar was empty) -->
+        <!-- CONTAINER 1: Quick Mode Layout -->
         <LinearLayout
-            android:id="@+id/layout_brainstorm_query_row"
-            android:layout_width="match_parent"
-            android:layout_height="38dp"
-            android:layout_marginBottom="6dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:background="@drawable/bg_input_field"
-            android:paddingStart="8dp"
-            android:paddingEnd="4dp">
-
-            <EditText
-                android:id="@+id/et_brainstorm_query"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@null"
-                android:hint="Ask anything or enter brainstorm topic..."
-                android:textColor="#1F1F1F"
-                android:textColorHint="#94A3B8"
-                android:textSize="12sp"
-                android:singleLine="true"
-                android:imeOptions="actionGo" />
-
-            <ImageButton
-                android:id="@+id/btn_brainstorm_send"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Send"
-                android:src="@drawable/ic_send"
-                app:tint="#4F46E5" />
-
-        </LinearLayout>
-
-        <!-- Quick Starter Chips Row -->
-        <HorizontalScrollView
-            android:id="@+id/scroll_brainstorm_chips"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
-            android:scrollbars="none">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/chip_pros_cons"
-                    android:layout_width="wrap_content"
-                    android:layout_height="26dp"
-                    android:layout_marginEnd="6dp"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="0dp"
-                    android:text="Pros &amp; Cons"
-                    android:textSize="10.5sp"
-                    android:textAllCaps="false"
-                    android:textColor="#C4C6D0"
-                    app:cornerRadius="13dp"
-                    android:backgroundTint="#2D3035"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/chip_strategy"
-                    android:layout_width="wrap_content"
-                    android:layout_height="26dp"
-                    android:layout_marginEnd="6dp"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="0dp"
-                    android:text="Key Strategy"
-                    android:textSize="10.5sp"
-                    android:textAllCaps="false"
-                    android:textColor="#C4C6D0"
-                    app:cornerRadius="13dp"
-                    android:backgroundTint="#2D3035"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/chip_counterargs"
-                    android:layout_width="wrap_content"
-                    android:layout_height="26dp"
-                    android:layout_marginEnd="6dp"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="0dp"
-                    android:text="Counterarguments"
-                    android:textSize="10.5sp"
-                    android:textAllCaps="false"
-                    android:textColor="#C4C6D0"
-                    app:cornerRadius="13dp"
-                    android:backgroundTint="#2D3035"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/chip_explain"
-                    android:layout_width="wrap_content"
-                    android:layout_height="26dp"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="0dp"
-                    android:text="Explain Simply"
-                    android:textSize="10.5sp"
-                    android:textAllCaps="false"
-                    android:textColor="#C4C6D0"
-                    app:cornerRadius="13dp"
-                    android:backgroundTint="#2D3035"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
-
-            </LinearLayout>
-
-        </HorizontalScrollView>
-
-        <!-- Result Container -->
-        <FrameLayout
+            android:id="@+id/layout_brainstorm_quick_mode"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#242830"
-            android:padding="8dp">
+            android:orientation="vertical"
+            android:visibility="visible">
 
-            <ScrollView
+            <!-- Inline Prompt Input Box (Shown when user wants to query or chat bar was empty) -->
+            <LinearLayout
+                android:id="@+id/layout_brainstorm_query_row"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="38dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_input_field"
+                android:paddingStart="8dp"
+                android:paddingEnd="4dp">
+
+                <EditText
+                    android:id="@+id/et_brainstorm_query"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="Ask anything or enter brainstorm topic..."
+                    android:textColor="#1F1F1F"
+                    android:textColorHint="#94A3B8"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:imeOptions="actionGo" />
+
+                <ImageButton
+                    android:id="@+id/btn_brainstorm_send"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Send"
+                    android:src="@drawable/ic_send"
+                    app:tint="#4F46E5" />
+
+            </LinearLayout>
+
+            <!-- Quick Starter Chips Row -->
+            <HorizontalScrollView
+                android:id="@+id/scroll_brainstorm_chips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_pros_cons"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginEnd="6dp"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="0dp"
+                        android:text="Pros &amp; Cons"
+                        android:textSize="10.5sp"
+                        android:textAllCaps="false"
+                        android:textColor="#C4C6D0"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#2D3035"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_strategy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginEnd="6dp"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="0dp"
+                        android:text="Key Strategy"
+                        android:textSize="10.5sp"
+                        android:textAllCaps="false"
+                        android:textColor="#C4C6D0"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#2D3035"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_counterargs"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginEnd="6dp"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="0dp"
+                        android:text="Counterarguments"
+                        android:textSize="10.5sp"
+                        android:textAllCaps="false"
+                        android:textColor="#C4C6D0"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#2D3035"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_explain"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="0dp"
+                        android:text="Explain Simply"
+                        android:textSize="10.5sp"
+                        android:textAllCaps="false"
+                        android:textColor="#C4C6D0"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#2D3035"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+            <!-- Result Container -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="#242830"
+                android:padding="8dp">
+
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true">
+
+                    <TextView
+                        android:id="@+id/tv_brainstorm_result"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Enter a topic above or tap a starter chip to brainstorm with your SME."
+                        android:textColor="#F8FAFC"
+                        android:textSize="12.5sp"
+                        android:lineSpacingExtra="3dp"
+                        android:textIsSelectable="true" />
+
+                </ScrollView>
+
+                <ProgressBar
+                    android:id="@+id/progress_brainstorm"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
+                    android:indeterminate="true" />
+
+            </FrameLayout>
+
+            <!-- Bottom Action Row: Copy & Insert -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_copy_brainstorm"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:backgroundTint="#383A40"
+                    app:icon="@drawable/ic_copy"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/white"
+                    app:cornerRadius="8dp"
+                    android:text="Copy"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_insert_brainstorm"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.6"
+                    android:layout_marginStart="6dp"
+                    android:backgroundTint="#059669"
+                    app:icon="@drawable/ic_check"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/white"
+                    app:cornerRadius="8dp"
+                    android:text="Insert into Chat"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- CONTAINER 2: Live Session Mode Layout -->
+        <LinearLayout
+            android:id="@+id/layout_brainstorm_live_mode"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Chat Bubble Scroll View -->
+            <ScrollView
+                android:id="@+id/scroll_session_chat"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="#242830"
+                android:padding="6dp"
                 android:fillViewport="true">
 
-                <TextView
-                    android:id="@+id/tv_brainstorm_result"
+                <LinearLayout
+                    android:id="@+id/layout_chat_bubbles"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Enter a topic above or tap a starter chip to brainstorm with your SME."
-                    android:textColor="#F8FAFC"
-                    android:textSize="12.5sp"
-                    android:lineSpacingExtra="3dp"
-                    android:textIsSelectable="true" />
+                    android:orientation="vertical" />
 
             </ScrollView>
 
-            <ProgressBar
-                android:id="@+id/progress_brainstorm"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_gravity="center"
-                android:visibility="gone"
-                android:indeterminate="true" />
+            <!-- Live Status & Mic Control Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="4dp">
 
-        </FrameLayout>
+                <ImageButton
+                    android:id="@+id/btn_session_mic"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:background="@drawable/bg_mic_button"
+                    android:backgroundTint="#4F46E5"
+                    android:contentDescription="Speak turn"
+                    android:src="@drawable/ic_mic"
+                    app:tint="@color/white" />
 
-        <!-- Bottom Action Row: Copy & Insert -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal"
-            android:gravity="center">
+                <TextView
+                    android:id="@+id/tv_session_status"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Tap mic to speak your thought..."
+                    android:textColor="#CBD5E1"
+                    android:textSize="11.5sp"
+                    android:singleLine="true" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_copy_brainstorm"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginEnd="6dp"
-                android:backgroundTint="#383A40"
-                app:icon="@drawable/ic_copy"
-                app:iconSize="16dp"
-                app:iconTint="@color/white"
-                app:cornerRadius="8dp"
-                android:text="Copy"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                <ProgressBar
+                    android:id="@+id/progress_session"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="6dp"
+                    android:indeterminate="true"
+                    android:visibility="gone" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_insert_brainstorm"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1.6"
-                android:layout_marginStart="6dp"
-                android:backgroundTint="#059669"
-                app:icon="@drawable/ic_check"
-                app:iconSize="16dp"
-                app:iconTint="@color/white"
-                app:cornerRadius="8dp"
-                android:text="Insert into Chat"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Live Session Action Row: Reset & Wrap Up -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_clear_session"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="6dp"
+                    android:backgroundTint="#383A40"
+                    app:cornerRadius="8dp"
+                    android:text="Clear"
+                    android:textAllCaps="false"
+                    android:textColor="#94A3B8"
+                    android:textSize="11.5sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_conclude_session"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:backgroundTint="#4F46E5"
+                    app:cornerRadius="8dp"
+                    app:icon="@drawable/ic_check"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/white"
+                    android:text="Wrap Up &amp; Conclude"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

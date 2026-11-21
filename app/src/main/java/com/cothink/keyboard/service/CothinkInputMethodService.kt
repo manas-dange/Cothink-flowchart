@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.inputmethodservice.InputMethodService
 import android.net.Uri
 import android.os.Bundle
@@ -13,6 +14,7 @@ import android.os.IBinder
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -22,6 +24,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -30,6 +33,7 @@ import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import com.google.android.material.button.MaterialButton
 import com.cothink.keyboard.R
+import com.cothink.keyboard.ai.ChatTurn
 import com.cothink.keyboard.ai.GroqSmeBrainstormer
 import com.cothink.keyboard.ai.GroqTextEnhancer
 import com.cothink.keyboard.ai.MermaidSanitizer
@@ -48,6 +52,9 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
     private var renderService: MermaidRenderService? = null
     private var isRenderBound = false
+
+    enum class VoiceTarget { NORMAL, BRAINSTORM_SESSION }
+    private var currentVoiceTarget = VoiceTarget.NORMAL
 
     private lateinit var normalLayout: LinearLayout
     private lateinit var previewLayout: LinearLayout
@@ -71,6 +78,12 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var brainstormPanelLayout: LinearLayout
     private lateinit var brainstormHeaderText: TextView
     private lateinit var closeBrainstormButton: ImageButton
+    private lateinit var modeQuickButton: MaterialButton
+    private lateinit var modeLiveButton: MaterialButton
+    private lateinit var brainstormQuickLayout: LinearLayout
+    private lateinit var brainstormLiveLayout: LinearLayout
+
+    // Quick Mode Views
     private lateinit var brainstormQueryInput: EditText
     private lateinit var brainstormSendButton: ImageButton
     private lateinit var brainstormChipsScroll: HorizontalScrollView
@@ -83,6 +96,17 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var chipStrategy: Button
     private lateinit var chipCounterargs: Button
     private lateinit var chipExplain: Button
+
+    // Live Session Views
+    private lateinit var sessionChatScroll: ScrollView
+    private lateinit var chatBubblesLayout: LinearLayout
+    private lateinit var sessionMicButton: ImageButton
+    private lateinit var sessionStatusText: TextView
+    private lateinit var sessionProgressBar: ProgressBar
+    private lateinit var clearSessionButton: MaterialButton
+    private lateinit var concludeSessionButton: MaterialButton
+
+    private val sessionHistory = mutableListOf<ChatTurn>()
 
     private lateinit var shiftButton: MaterialButton
     private lateinit var backspaceButton: MaterialButton
@@ -170,6 +194,12 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         brainstormPanelLayout = view.findViewById(R.id.brainstorm_panel_layout)
         brainstormHeaderText = view.findViewById(R.id.tv_brainstorm_header)
         closeBrainstormButton = view.findViewById(R.id.btn_close_brainstorm)
+        modeQuickButton = view.findViewById(R.id.btn_mode_quick)
+        modeLiveButton = view.findViewById(R.id.btn_mode_live)
+        brainstormQuickLayout = view.findViewById(R.id.layout_brainstorm_quick_mode)
+        brainstormLiveLayout = view.findViewById(R.id.layout_brainstorm_live_mode)
+
+        // Quick Mode Views
         brainstormQueryInput = view.findViewById(R.id.et_brainstorm_query)
         brainstormSendButton = view.findViewById(R.id.btn_brainstorm_send)
         brainstormChipsScroll = view.findViewById(R.id.scroll_brainstorm_chips)
@@ -182,6 +212,15 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         chipStrategy = view.findViewById(R.id.chip_strategy)
         chipCounterargs = view.findViewById(R.id.chip_counterargs)
         chipExplain = view.findViewById(R.id.chip_explain)
+
+        // Live Session Views
+        sessionChatScroll = view.findViewById(R.id.scroll_session_chat)
+        chatBubblesLayout = view.findViewById(R.id.layout_chat_bubbles)
+        sessionMicButton = view.findViewById(R.id.btn_session_mic)
+        sessionStatusText = view.findViewById(R.id.tv_session_status)
+        sessionProgressBar = view.findViewById(R.id.progress_session)
+        clearSessionButton = view.findViewById(R.id.btn_clear_session)
+        concludeSessionButton = view.findViewById(R.id.btn_conclude_session)
 
         setupKeyListeners(view)
         setupVoiceAndPreviewListeners(view)
@@ -231,6 +270,14 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             handleAskButtonClick()
         }
 
+        modeQuickButton.setOnClickListener {
+            switchBrainstormMode(isLive = false)
+        }
+
+        modeLiveButton.setOnClickListener {
+            switchBrainstormMode(isLive = true)
+        }
+
         closeBrainstormButton.setOnClickListener {
             hideBrainstormPanel()
         }
@@ -278,18 +325,27 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             triggerBrainstormWithPrefix("Explain simply like an expert:")
         }
 
-        micButton.setOnClickListener {
-            if (isListening) {
-                isListening = false
-                micButton.clearColorFilter()
-                statusText.text = "Processing speech..."
-                try {
-                    speechRecognizer?.stopListening()
-                } catch (e: Exception) {
-                    speechRecognizer?.cancel()
-                }
+        sessionMicButton.setOnClickListener {
+            if (isListening && currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+                stopVoiceCapture()
             } else {
-                startVoiceCapture()
+                startVoiceCapture(VoiceTarget.BRAINSTORM_SESSION)
+            }
+        }
+
+        clearSessionButton.setOnClickListener {
+            clearSession()
+        }
+
+        concludeSessionButton.setOnClickListener {
+            concludeCurrentSession()
+        }
+
+        micButton.setOnClickListener {
+            if (isListening && currentVoiceTarget == VoiceTarget.NORMAL) {
+                stopVoiceCapture()
+            } else {
+                startVoiceCapture(VoiceTarget.NORMAL)
             }
         }
 
@@ -307,6 +363,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private fun handleAskButtonClick() {
         val hostText = getHostFieldText().trim()
         showBrainstormPanel()
+        switchBrainstormMode(isLive = false)
         if (hostText.isNotBlank()) {
             brainstormQueryInput.setText(hostText)
             executeBrainstorm(hostText)
@@ -314,6 +371,127 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             brainstormQueryInput.setText("")
             brainstormResultText.text = "Enter a topic above or tap a starter chip to brainstorm with your SME."
             brainstormProgressBar.visibility = View.GONE
+        }
+    }
+
+    private fun switchBrainstormMode(isLive: Boolean) {
+        if (isLive) {
+            modeLiveButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#4F46E5"))
+            modeLiveButton.setTextColor(Color.WHITE)
+            modeQuickButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#2D3035"))
+            modeQuickButton.setTextColor(Color.parseColor("#94A3B8"))
+            brainstormQuickLayout.visibility = View.GONE
+            brainstormLiveLayout.visibility = View.VISIBLE
+            if (sessionHistory.isEmpty()) {
+                sessionStatusText.text = "Tap mic to speak your thought..."
+            }
+        } else {
+            modeQuickButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#4F46E5"))
+            modeQuickButton.setTextColor(Color.WHITE)
+            modeLiveButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#2D3035"))
+            modeLiveButton.setTextColor(Color.parseColor("#94A3B8"))
+            brainstormQuickLayout.visibility = View.VISIBLE
+            brainstormLiveLayout.visibility = View.GONE
+        }
+    }
+
+    private fun addChatBubble(role: String, text: String) {
+        val isUser = role == "user"
+        val bubbleContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 4, 0, 4)
+            }
+            gravity = if (isUser) Gravity.END else Gravity.START
+        }
+
+        val bubbleCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundResource(if (isUser) R.drawable.bg_bubble_user else R.drawable.bg_bubble_sme)
+            setPadding(20, 12, 20, 12)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val labelText = TextView(this).apply {
+            this.text = if (isUser) "You" else "SME"
+            textSize = 9.5f
+            setTextColor(if (isUser) Color.parseColor("#93C5FD") else Color.parseColor("#818CF8"))
+            setTypeface(null, Typeface.BOLD)
+            setPadding(0, 0, 0, 2)
+        }
+
+        val contentText = TextView(this).apply {
+            this.text = text
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            setLineSpacing(2f, 1f)
+            setTextIsSelectable(true)
+        }
+
+        bubbleCard.addView(labelText)
+        bubbleCard.addView(contentText)
+        bubbleContainer.addView(bubbleCard)
+        chatBubblesLayout.addView(bubbleContainer)
+
+        sessionChatScroll.post {
+            sessionChatScroll.fullScroll(View.FOCUS_DOWN)
+        }
+    }
+
+    private fun clearSession() {
+        sessionHistory.clear()
+        chatBubblesLayout.removeAllViews()
+        sessionStatusText.text = "Session reset. Tap mic to start speaking."
+        sessionProgressBar.visibility = View.GONE
+    }
+
+    private fun handleSessionSpeechResult(transcript: String) {
+        sessionStatusText.text = "SME is analyzing..."
+        sessionProgressBar.visibility = View.VISIBLE
+        addChatBubble("user", transcript)
+
+        serviceScope.launch {
+            val result = smeBrainstormer.converseTurn(sessionHistory, transcript)
+            sessionProgressBar.visibility = View.GONE
+            result.onSuccess { reply ->
+                sessionHistory.add(ChatTurn(role = "user", content = transcript))
+                sessionHistory.add(ChatTurn(role = "assistant", content = reply))
+                addChatBubble("assistant", reply)
+                sessionStatusText.text = "Tap mic to speak your next thought"
+            }.onFailure { err ->
+                sessionStatusText.text = "Error: ${err.message}"
+            }
+        }
+    }
+
+    private fun concludeCurrentSession() {
+        if (sessionHistory.isEmpty()) {
+            Toast.makeText(this, "Speak a thought first to brainstorm", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        sessionStatusText.text = "Synthesizing executive decision summary..."
+        sessionProgressBar.visibility = View.VISIBLE
+        concludeSessionButton.isEnabled = false
+
+        serviceScope.launch {
+            val result = smeBrainstormer.concludeSession(sessionHistory)
+            sessionProgressBar.visibility = View.GONE
+            concludeSessionButton.isEnabled = true
+            result.onSuccess { summary ->
+                currentBrainstormText = summary
+                switchBrainstormMode(isLive = false)
+                brainstormResultText.text = summary
+                Toast.makeText(this@CothinkInputMethodService, "Session concluded! Ready to insert.", Toast.LENGTH_SHORT).show()
+            }.onFailure { err ->
+                sessionStatusText.text = "Conclude error: ${err.message}"
+            }
         }
     }
 
@@ -351,6 +529,9 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun hideBrainstormPanel() {
+        if (isListening && currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+            stopVoiceCapture()
+        }
         brainstormPanelLayout.visibility = View.GONE
         normalLayout.visibility = View.VISIBLE
     }
@@ -618,7 +799,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
     }
 
-    private fun startVoiceCapture() {
+    private fun startVoiceCapture(target: VoiceTarget = VoiceTarget.NORMAL) {
         if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
             != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
@@ -659,30 +840,71 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
                 putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
             }
 
+            currentVoiceTarget = target
             isListening = true
-            micButton.setColorFilter(Color.parseColor("#EF4444"))
-            statusText.text = "Listening... Tap mic when done"
-            progressBar.visibility = View.VISIBLE
+
+            if (target == VoiceTarget.BRAINSTORM_SESSION) {
+                sessionMicButton.setColorFilter(Color.parseColor("#EF4444"))
+                sessionStatusText.text = "Listening... Speak your thought"
+                sessionProgressBar.visibility = View.VISIBLE
+            } else {
+                micButton.setColorFilter(Color.parseColor("#EF4444"))
+                statusText.text = "Listening... Tap mic when done"
+                progressBar.visibility = View.VISIBLE
+            }
+
             speechRecognizer?.startListening(intent)
         } catch (e: Exception) {
             isListening = false
             micButton.clearColorFilter()
-            resetStatus("Voice error: ${e.message}")
+            sessionMicButton.clearColorFilter()
+            if (target == VoiceTarget.BRAINSTORM_SESSION) {
+                sessionStatusText.text = "Voice error: ${e.message}"
+                sessionProgressBar.visibility = View.GONE
+            } else {
+                resetStatus("Voice error: ${e.message}")
+            }
+        }
+    }
+
+    private fun stopVoiceCapture() {
+        isListening = false
+        micButton.clearColorFilter()
+        sessionMicButton.clearColorFilter()
+        if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+            sessionStatusText.text = "Processing speech..."
+        } else {
+            statusText.text = "Processing speech..."
+        }
+        try {
+            speechRecognizer?.stopListening()
+        } catch (e: Exception) {
+            speechRecognizer?.cancel()
         }
     }
 
     override fun onResults(results: Bundle?) {
         isListening = false
         micButton.clearColorFilter()
+        sessionMicButton.clearColorFilter()
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val transcript = matches?.firstOrNull()
 
         if (transcript.isNullOrBlank()) {
-            resetStatus("No speech detected")
+            if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+                sessionStatusText.text = "No speech detected. Tap mic to retry."
+                sessionProgressBar.visibility = View.GONE
+            } else {
+                resetStatus("No speech detected")
+            }
             return
         }
 
-        processTranscript(transcript)
+        if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+            handleSessionSpeechResult(transcript)
+        } else {
+            processTranscript(transcript)
+        }
     }
 
     private fun processTranscript(transcript: String) {
@@ -830,6 +1052,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     override fun onError(error: Int) {
         isListening = false
         micButton.clearColorFilter()
+        sessionMicButton.clearColorFilter()
         val message = when (error) {
             SpeechRecognizer.ERROR_NO_MATCH -> "No speech heard. Speak clearly after tapping mic."
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Speech timeout. Tap mic to retry."
@@ -845,28 +1068,49 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             else -> "Voice error ($error). Tap mic to retry."
         }
         speechRecognizer?.cancel()
-        resetStatus(message)
+        if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+            sessionStatusText.text = message
+            sessionProgressBar.visibility = View.GONE
+        } else {
+            resetStatus(message)
+        }
     }
 
     override fun onReadyForSpeech(params: Bundle?) {
-        statusText.text = "Listening... Speak now"
+        if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+            sessionStatusText.text = "Listening... Speak now"
+        } else {
+            statusText.text = "Listening... Speak now"
+        }
     }
 
     override fun onBeginningOfSpeech() {
-        statusText.text = "Recording voice..."
+        if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+            sessionStatusText.text = "Recording your thought..."
+        } else {
+            statusText.text = "Recording voice..."
+        }
     }
 
     override fun onRmsChanged(rmsdB: Float) {}
     override fun onBufferReceived(buffer: ByteArray?) {}
     override fun onEndOfSpeech() {
-        statusText.text = "Processing speech..."
+        if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+            sessionStatusText.text = "Processing speech..."
+        } else {
+            statusText.text = "Processing speech..."
+        }
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
         val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val partial = matches?.firstOrNull()
         if (!partial.isNullOrBlank()) {
-            statusText.text = "\"$partial\""
+            if (currentVoiceTarget == VoiceTarget.BRAINSTORM_SESSION) {
+                sessionStatusText.text = "\"$partial\""
+            } else {
+                statusText.text = "\"$partial\""
+            }
         }
     }
     override fun onEvent(eventType: Int, params: Bundle?) {}

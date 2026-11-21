@@ -36,6 +36,30 @@ CRITICAL FORMATTING & CONTENT RULES:
 5. DOMAIN EXPERT TONE: Automatically adopt the persona of a seasoned senior specialist in the relevant domain (Tech, Strategy, Finance, Legal, etc.). Provide critical trade-offs and non-obvious angles.
 """
 
+        const val CONVERSATIONAL_SYSTEM_PROMPT = """You are an elite, on-demand Subject Matter Expert (SME) in an active spoken discussion.
+The user is speaking to you turn-by-turn to brainstorm, pressure-test ideas, or evaluate choices.
+
+CRITICAL CONVERSATIONAL RULES:
+1. ULTRA-BRIEF (UNDER 60 WORDS): Keep every response under 2-3 sentences (strictly maximum 60 words). Never lecture.
+2. THINKING PARTNER DYNAMICS: Directly address what the user said. Point out the primary trade-off, challenge an unexamined assumption, or offer a sharp perspective to narrow the decision.
+3. NO FLUFF OR GREETINGS: Zero greetings ("Hello", "Certainly"), zero pleasantries ("Great question", "Thanks"), and zero emojis. Start immediately with the core counter-point or insight.
+4. NO TABLES: Plain text only, or at most 2 brief bullet points.
+"""
+
+        const val CONCLUDE_SYSTEM_PROMPT = """You are an executive synthesizer. You have observed a brainstorming session between a user and a Subject Matter Expert.
+Produce a definitive, executive-ready decision summary of what was decided and agreed upon.
+
+CRITICAL FORMATTING & CONTENT RULES:
+1. STRICTLY CONCISE (UNDER 250 WORDS): Dense, punchy, actionable summary ready to paste into team chat.
+2. STRUCTURE (USE EXACTLY THESE BULLETS IF APPLICABLE):
+• Key Decision / Core Takeaway
+• Primary Rationale & Trade-offs
+• Concrete Next Steps
+3. NO TABLES: NEVER use markdown tables.
+4. NO PREAMBLE OR CLOSING REMARKS: Never include titles, intros ("Here is the summary"), or closings ("In conclusion", "Hope this helps"). Start immediately with the first bullet.
+5. NO QUESTIONS: Deliver conclusive synthesized statements.
+"""
+
         fun sanitizeResponse(raw: String): String {
             var text = raw.trim()
             if (text.startsWith("\"") && text.endsWith("\"") && text.length > 2) {
@@ -104,14 +128,28 @@ CRITICAL FORMATTING & CONTENT RULES:
 
             return cleanedLines.joinToString("\n").trim()
         }
+
+        fun sanitizeConversationalResponse(raw: String): String {
+            var text = raw.trim()
+            if (text.startsWith("\"") && text.endsWith("\"") && text.length > 2) {
+                text = text.substring(1, text.length - 1).trim()
+            }
+            // Strip leading pleasantries
+            val pleasantries = listOf("certainly!", "sure!", "hello!", "great question.", "understood.", "got it.")
+            for (p in pleasantries) {
+                if (text.lowercase().startsWith(p)) {
+                    text = text.substring(p.length).trim()
+                }
+            }
+            return text
+        }
     }
 
-    override suspend fun brainstorm(topicOrQuery: String): Result<String> = withContext(Dispatchers.IO) {
-        val cleanInput = topicOrQuery.trim()
-        if (cleanInput.isBlank()) {
-            return@withContext Result.failure(IllegalArgumentException("Topic or query cannot be empty."))
-        }
-
+    private suspend fun executeChatRequest(
+        messagesArray: JSONArray,
+        maxTokens: Int,
+        temperature: Double
+    ): Result<String> = withContext(Dispatchers.IO) {
         val rawKey = apiKeyProvider()
         val apiKey = BuiltInConfig.getApiKey(rawKey)
         if (apiKey.isBlank()) {
@@ -124,24 +162,13 @@ CRITICAL FORMATTING & CONTENT RULES:
 
         var lastError: Exception? = null
 
-        val messagesArray = JSONArray().apply {
-            put(JSONObject().apply {
-                put("role", "system")
-                put("content", SYSTEM_PROMPT)
-            })
-            put(JSONObject().apply {
-                put("role", "user")
-                put("content", cleanInput)
-            })
-        }
-
         for (modelName in candidateModels) {
             try {
                 val requestJson = JSONObject().apply {
                     put("model", modelName)
                     put("messages", messagesArray)
-                    put("temperature", 0.2)
-                    put("max_tokens", 500) // Strictly caps length to under 400 words
+                    put("temperature", temperature)
+                    put("max_tokens", maxTokens)
                 }
 
                 val body = requestJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -169,12 +196,10 @@ CRITICAL FORMATTING & CONTENT RULES:
 
                     val messageObj = choices.getJSONObject(0).optJSONObject("message")
                     val rawContent = messageObj?.optString("content").orEmpty()
-                    val cleaned = sanitizeResponse(rawContent)
-
-                    if (cleaned.isNotBlank()) {
-                        return@withContext Result.success(cleaned)
+                    if (rawContent.isNotBlank()) {
+                        return@withContext Result.success(rawContent)
                     } else {
-                        lastError = IOException("Model $modelName returned empty brainstorm.")
+                        lastError = IOException("Model $modelName returned empty content.")
                     }
                 }
             } catch (e: Exception) {
@@ -183,5 +208,77 @@ CRITICAL FORMATTING & CONTENT RULES:
         }
 
         Result.failure(lastError ?: IOException("Brainstorm service unavailable. Please check connection."))
+    }
+
+    override suspend fun brainstorm(topicOrQuery: String): Result<String> {
+        val cleanInput = topicOrQuery.trim()
+        if (cleanInput.isBlank()) {
+            return Result.failure(IllegalArgumentException("Topic or query cannot be empty."))
+        }
+
+        val messagesArray = JSONArray().apply {
+            put(JSONObject().apply {
+                put("role", "system")
+                put("content", SYSTEM_PROMPT)
+            })
+            put(JSONObject().apply {
+                put("role", "user")
+                put("content", cleanInput)
+            })
+        }
+
+        val rawResult = executeChatRequest(messagesArray, maxTokens = 500, temperature = 0.2)
+        return rawResult.map { sanitizeResponse(it) }
+    }
+
+    override suspend fun converseTurn(history: List<ChatTurn>, userMessage: String): Result<String> {
+        val cleanInput = userMessage.trim()
+        if (cleanInput.isBlank()) {
+            return Result.failure(IllegalArgumentException("Message cannot be empty."))
+        }
+
+        val messagesArray = JSONArray().apply {
+            put(JSONObject().apply {
+                put("role", "system")
+                put("content", CONVERSATIONAL_SYSTEM_PROMPT)
+            })
+            for (turn in history) {
+                put(JSONObject().apply {
+                    put("role", turn.role)
+                    put("content", turn.content)
+                })
+            }
+            put(JSONObject().apply {
+                put("role", "user")
+                put("content", cleanInput)
+            })
+        }
+
+        val rawResult = executeChatRequest(messagesArray, maxTokens = 150, temperature = 0.3)
+        return rawResult.map { sanitizeConversationalResponse(it) }
+    }
+
+    override suspend fun concludeSession(history: List<ChatTurn>): Result<String> {
+        if (history.isEmpty()) {
+            return Result.failure(IllegalArgumentException("No conversation turns to conclude."))
+        }
+
+        val transcript = history.joinToString("\n\n") {
+            "${if (it.role == "user") "USER" else "SME"}: ${it.content}"
+        }
+
+        val messagesArray = JSONArray().apply {
+            put(JSONObject().apply {
+                put("role", "system")
+                put("content", CONCLUDE_SYSTEM_PROMPT)
+            })
+            put(JSONObject().apply {
+                put("role", "user")
+                put("content", "Synthesize and conclude this brainstorm session into an executive decision summary:\n\n$transcript")
+            })
+        }
+
+        val rawResult = executeChatRequest(messagesArray, maxTokens = 500, temperature = 0.2)
+        return rawResult.map { sanitizeResponse(it) }
     }
 }

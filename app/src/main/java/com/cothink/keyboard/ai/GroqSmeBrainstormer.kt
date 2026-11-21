@@ -30,10 +30,22 @@ You analyze user topics, questions, or draft thoughts and provide sharp, senior-
 
 CRITICAL FORMATTING & CONTENT RULES:
 1. STRICTLY CONCISE (UNDER 300 WORDS): Output must be dense, punchy, and strictly under 300 words (maximum 400 words). Focus only on the top 3 to 5 highest-signal insights or action steps. Never write an essay.
-2. NO TABLES: NEVER use markdown tables (| col | col |). Tables break mobile chat screens. Use clean bullet points (-) or numbered steps (1.) only.
-3. NO PREAMBLE OR CLOSING REMARKS: Do NOT include intro titles, topic restatements, or closing summaries (never write "Bottom line:", "In conclusion:", "Summary:"). Start immediately with your first substantive point and end with your final point.
-4. NO QUESTIONS OR CLARIFICATIONS: The user will paste this text directly into a chat. Never ask questions back, never ask for clarification, and never offer follow-up choices. Make the best executive assumption and deliver the insight directly.
-5. DOMAIN EXPERT TONE: Automatically adopt the persona of a seasoned senior specialist in the relevant domain (Tech, Strategy, Finance, Legal, etc.). Provide critical trade-offs and non-obvious angles.
+2. NO MARKDOWN ASTERISKS OR BOLDING: Never use asterisks (* or **) or underscores for bolding or emphasis. Output pure clean plain text only (e.g. write 'Assuming data equals insight: Heavy reliance...' instead of '- **Assuming data equals insight**: Heavy reliance...').
+3. NO TABLES: NEVER use markdown tables (| col | col |). Tables break mobile chat screens. Use clean bullet points (•) or numbered steps (1.) only.
+4. NO PREAMBLE OR CLOSING REMARKS: Do NOT include intro titles, topic restatements, or closing summaries (never write "Bottom line:", "In conclusion:", "Summary:"). Start immediately with your first substantive point and end with your final point.
+5. NO QUESTIONS OR CLARIFICATIONS: The user will paste this text directly into a chat. Never ask questions back, never ask for clarification, and never offer follow-up choices. Make the best executive assumption and deliver the insight directly.
+6. DOMAIN EXPERT TONE: Automatically adopt the persona of a seasoned senior specialist in the relevant domain (Tech, Strategy, Finance, Legal, etc.). Provide critical trade-offs and non-obvious angles.
+"""
+
+        const val QUICK_MESSAGE_SYSTEM_PROMPT = """You are an elite, on-demand Subject Matter Expert (SME).
+The user needs an ultra-concise, definitive message ready to paste directly into a chat.
+
+CRITICAL RULES:
+1. STRICTLY UNDER 50 WORDS: Deliver only the core answer, decision, or takeaway in 1 to 2 crisp, high-signal sentences (strictly maximum 50 words).
+2. NO MARKDOWN ASTERISKS OR BOLDING: Never use asterisks (* or **) or underscores for formatting. Output pure plain text only.
+3. NO BULLET POINTS: Write flowing, direct sentences.
+4. NO PREAMBLE OR CLOSING REMARKS: Never write intros or closings ("Bottom line:", "In conclusion:"). Start immediately with the core substance.
+5. NO QUESTIONS: Deliver conclusive statements immediately.
 """
 
         const val CONVERSATIONAL_SYSTEM_PROMPT = """You are an elite, on-demand Subject Matter Expert (SME) in an active spoken discussion.
@@ -41,9 +53,10 @@ The user is speaking to you turn-by-turn to brainstorm, pressure-test ideas, or 
 
 CRITICAL CONVERSATIONAL RULES:
 1. ULTRA-BRIEF (UNDER 60 WORDS): Keep every response under 2-3 sentences (strictly maximum 60 words). Never lecture.
-2. THINKING PARTNER DYNAMICS: Directly address what the user said. Point out the primary trade-off, challenge an unexamined assumption, or offer a sharp perspective to narrow the decision.
-3. NO FLUFF OR GREETINGS: Zero greetings ("Hello", "Certainly"), zero pleasantries ("Great question", "Thanks"), and zero emojis. Start immediately with the core counter-point or insight.
-4. NO TABLES: Plain text only, or at most 2 brief bullet points.
+2. NO MARKDOWN ASTERISKS OR BOLDING: Pure plain text only. Never use asterisks (* or **).
+3. THINKING PARTNER DYNAMICS: Directly address what the user said. Point out the primary trade-off, challenge an unexamined assumption, or offer a sharp perspective to narrow the decision.
+4. NO FLUFF OR GREETINGS: Zero greetings ("Hello", "Certainly"), zero pleasantries ("Great question", "Thanks"), and zero emojis. Start immediately with the core counter-point or insight.
+5. NO TABLES: Plain text only, or at most 2 brief bullet points.
 """
 
         const val CONCLUDE_SYSTEM_PROMPT = """You are an executive synthesizer. You have observed a brainstorming session between a user and a Subject Matter Expert.
@@ -51,13 +64,14 @@ Produce a definitive, executive-ready decision summary of what was decided and a
 
 CRITICAL FORMATTING & CONTENT RULES:
 1. STRICTLY CONCISE (UNDER 250 WORDS): Dense, punchy, actionable summary ready to paste into team chat.
-2. STRUCTURE (USE EXACTLY THESE BULLETS IF APPLICABLE):
+2. NO MARKDOWN ASTERISKS OR BOLDING: Never use asterisks (* or **) or underscores for bolding. Use clean bullet points (•) with plain text only.
+3. STRUCTURE (USE EXACTLY THESE BULLETS IF APPLICABLE):
 • Key Decision / Core Takeaway
 • Primary Rationale & Trade-offs
 • Concrete Next Steps
-3. NO TABLES: NEVER use markdown tables.
-4. NO PREAMBLE OR CLOSING REMARKS: Never include titles, intros ("Here is the summary"), or closings ("In conclusion", "Hope this helps"). Start immediately with the first bullet.
-5. NO QUESTIONS: Deliver conclusive synthesized statements.
+4. NO TABLES: NEVER use markdown tables.
+5. NO PREAMBLE OR CLOSING REMARKS: Never include titles, intros ("Here is the summary"), or closings ("In conclusion", "Hope this helps"). Start immediately with the first bullet.
+6. NO QUESTIONS: Deliver conclusive synthesized statements.
 """
 
         fun sanitizeResponse(raw: String): String {
@@ -65,6 +79,9 @@ CRITICAL FORMATTING & CONTENT RULES:
             if (text.startsWith("\"") && text.endsWith("\"") && text.length > 2) {
                 text = text.substring(1, text.length - 1).trim()
             }
+
+            // Strip ALL markdown asterisks (* and **) to guarantee clean plain text
+            text = text.replace("**", "").replace("*", "")
 
             val lines = text.lines().toMutableList()
 
@@ -87,11 +104,8 @@ CRITICAL FORMATTING & CONTENT RULES:
                 val lower = last.lowercase()
                 if (lower.isEmpty() ||
                     lower.startsWith("---") ||
-                    lower.startsWith("**bottom line") ||
                     lower.startsWith("bottom line") ||
-                    lower.startsWith("**in summary") ||
                     lower.startsWith("in summary") ||
-                    lower.startsWith("**conclusion") ||
                     lower.startsWith("conclusion:") ||
                     lower.startsWith("let me know") ||
                     lower.startsWith("would you like") ||
@@ -134,6 +148,9 @@ CRITICAL FORMATTING & CONTENT RULES:
             if (text.startsWith("\"") && text.endsWith("\"") && text.length > 2) {
                 text = text.substring(1, text.length - 1).trim()
             }
+            // Strip asterisks
+            text = text.replace("**", "").replace("*", "")
+
             // Strip leading pleasantries
             val pleasantries = listOf("certainly!", "sure!", "hello!", "great question.", "understood.", "got it.")
             for (p in pleasantries) {
@@ -228,6 +245,27 @@ CRITICAL FORMATTING & CONTENT RULES:
         }
 
         val rawResult = executeChatRequest(messagesArray, maxTokens = 500, temperature = 0.2)
+        return rawResult.map { sanitizeResponse(it) }
+    }
+
+    override suspend fun quickMessage(topicOrQuery: String): Result<String> {
+        val cleanInput = topicOrQuery.trim()
+        if (cleanInput.isBlank()) {
+            return Result.failure(IllegalArgumentException("Topic or query cannot be empty."))
+        }
+
+        val messagesArray = JSONArray().apply {
+            put(JSONObject().apply {
+                put("role", "system")
+                put("content", QUICK_MESSAGE_SYSTEM_PROMPT)
+            })
+            put(JSONObject().apply {
+                put("role", "user")
+                put("content", cleanInput)
+            })
+        }
+
+        val rawResult = executeChatRequest(messagesArray, maxTokens = 120, temperature = 0.2)
         return rawResult.map { sanitizeResponse(it) }
     }
 

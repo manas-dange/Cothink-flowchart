@@ -19,6 +19,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
+import android.widget.GridLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -87,15 +88,70 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var brainstormQueryInput: EditText
     private lateinit var brainstormSendButton: ImageButton
     private lateinit var brainstormChipsScroll: HorizontalScrollView
-    private lateinit var brainstormResultText: TextView
+    private lateinit var scrollBrainstormResult: ScrollView
+    private lateinit var layoutBrainstormCards: LinearLayout
     private lateinit var brainstormProgressBar: ProgressBar
     private lateinit var copyBrainstormButton: Button
     private lateinit var insertBrainstormButton: Button
 
+    private lateinit var chipQuickMsg: Button
     private lateinit var chipProsCons: Button
     private lateinit var chipStrategy: Button
     private lateinit var chipCounterargs: Button
     private lateinit var chipExplain: Button
+
+    // Emoji Picker Views
+    private lateinit var layoutKeyboardKeys: LinearLayout
+    private lateinit var layoutEmojiPicker: LinearLayout
+    private lateinit var keyEmojiButton: Button
+    private lateinit var tabEmojiSmileys: MaterialButton
+    private lateinit var tabEmojiGestures: MaterialButton
+    private lateinit var tabEmojiWork: MaterialButton
+    private lateinit var tabEmojiSymbols: MaterialButton
+    private lateinit var gridEmojis: GridLayout
+    private lateinit var btnEmojiAbc: MaterialButton
+    private lateinit var btnEmojiSpace: Button
+    private lateinit var btnEmojiBackspace: MaterialButton
+
+    private data class PastelTheme(
+        val bgHex: String,
+        val badgeHex: String,
+        val textHex: String
+    )
+
+    private val pastelThemes = listOf(
+        PastelTheme(bgHex = "#E0F2FE", badgeHex = "#0284C7", textHex = "#0F172A"), // Sky Blue
+        PastelTheme(bgHex = "#EEF2FF", badgeHex = "#4F46E5", textHex = "#1E1B4B"), // Indigo
+        PastelTheme(bgHex = "#ECFDF5", badgeHex = "#059669", textHex = "#064E3B"), // Emerald
+        PastelTheme(bgHex = "#FEF3C7", badgeHex = "#D97706", textHex = "#78350F"), // Amber
+        PastelTheme(bgHex = "#FFE4E6", badgeHex = "#E11D48", textHex = "#881337"), // Rose
+        PastelTheme(bgHex = "#F3E8FF", badgeHex = "#7C3AED", textHex = "#581C87")  // Violet
+    )
+
+    private val emojiCategories = mapOf(
+        "smileys" to listOf(
+            "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂",
+            "🙂", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘",
+            "😋", "😛", "😜", "🤪", "🤔", "🤫", "🤐", "🤨",
+            "😐", "😑", "😬", "🙄", "😴", "😷", "🤯", "🥳",
+            "😎", "🧐", "🤓"
+        ),
+        "gestures" to listOf(
+            "👍", "👎", "👌", "✌️", "🤞", "🤝", "👏", "🙌",
+            "👐", "🤲", "🙏", "✊", "👊", "🤛", "🤜", "👈",
+            "👉", "👆", "👇", "☝️", "👋", "🤙", "🤏", "💪"
+        ),
+        "work" to listOf(
+            "🚀", "💡", "💻", "📱", "📊", "📈", "📉", "📝",
+            "📌", "📍", "🎯", "⚙️", "⚡", "🔍", "💬", "✉️",
+            "📅", "⏱️", "🏆", "💼", "🧠", "🔬", "✨", "🤖"
+        ),
+        "symbols" to listOf(
+            "🔥", "🎉", "💯", "❤️", "💙", "💚", "💛", "💜",
+            "🖤", "💔", "💥", "⚠️", "🚫", "❌", "✅", "❓",
+            "❗", "🌟", "⭐", "☀️", "☕", "🍻"
+        )
+    )
 
     // Live Session Views
     private lateinit var sessionChatScroll: ScrollView
@@ -203,11 +259,13 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         brainstormQueryInput = view.findViewById(R.id.et_brainstorm_query)
         brainstormSendButton = view.findViewById(R.id.btn_brainstorm_send)
         brainstormChipsScroll = view.findViewById(R.id.scroll_brainstorm_chips)
-        brainstormResultText = view.findViewById(R.id.tv_brainstorm_result)
+        scrollBrainstormResult = view.findViewById(R.id.scroll_brainstorm_result)
+        layoutBrainstormCards = view.findViewById(R.id.layout_brainstorm_cards)
         brainstormProgressBar = view.findViewById(R.id.progress_brainstorm)
         copyBrainstormButton = view.findViewById(R.id.btn_copy_brainstorm)
         insertBrainstormButton = view.findViewById(R.id.btn_insert_brainstorm)
 
+        chipQuickMsg = view.findViewById(R.id.chip_quick_msg)
         chipProsCons = view.findViewById(R.id.chip_pros_cons)
         chipStrategy = view.findViewById(R.id.chip_strategy)
         chipCounterargs = view.findViewById(R.id.chip_counterargs)
@@ -223,6 +281,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         concludeSessionButton = view.findViewById(R.id.btn_conclude_session)
 
         setupKeyListeners(view)
+        setupEmojiPicker(view)
         setupVoiceAndPreviewListeners(view)
 
         return view
@@ -232,6 +291,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         super.onStartInputView(info, restarting)
         hideEnhancedPreview()
         hideBrainstormPanel()
+        toggleEmojiPicker(false)
     }
 
     private fun setupVoiceAndPreviewListeners(view: View) {
@@ -309,6 +369,25 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             }
         }
 
+        chipQuickMsg.setOnClickListener {
+            val hostText = getHostFieldText().trim()
+            val query = brainstormQueryInput.text.toString().trim()
+            val currentResult = currentBrainstormText.orEmpty().trim()
+
+            val target = when {
+                query.isNotBlank() -> query
+                currentResult.isNotBlank() -> currentResult
+                hostText.isNotBlank() -> hostText
+                else -> ""
+            }
+
+            if (target.isNotBlank()) {
+                executeQuickMessage(target)
+            } else {
+                triggerBrainstormWithPrefix("Quick message in <50 words:")
+            }
+        }
+
         chipProsCons.setOnClickListener {
             triggerBrainstormWithPrefix("Pros and cons of")
         }
@@ -369,7 +448,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             executeBrainstorm(hostText)
         } else {
             brainstormQueryInput.setText("")
-            brainstormResultText.text = "Enter a topic above or tap a starter chip to brainstorm with your SME."
+            displayBrainstormResult("")
             brainstormProgressBar.visibility = View.GONE
         }
     }
@@ -487,7 +566,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             result.onSuccess { summary ->
                 currentBrainstormText = summary
                 switchBrainstormMode(isLive = false)
-                brainstormResultText.text = summary
+                displayBrainstormResult(summary)
                 Toast.makeText(this@CothinkInputMethodService, "Session concluded! Ready to insert.", Toast.LENGTH_SHORT).show()
             }.onFailure { err ->
                 sessionStatusText.text = "Conclude error: ${err.message}"
@@ -508,17 +587,164 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private fun executeBrainstorm(query: String) {
         if (query.isBlank()) return
         brainstormProgressBar.visibility = View.VISIBLE
-        brainstormResultText.text = "Consulting Subject Matter Expert..."
+        layoutBrainstormCards.removeAllViews()
+        val loadingView = TextView(this).apply {
+            text = "Consulting Subject Matter Expert..."
+            setTextColor(Color.parseColor("#94A3B8"))
+            textSize = 12.5f
+            setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8))
+        }
+        layoutBrainstormCards.addView(loadingView)
 
         serviceScope.launch {
             val result = smeBrainstormer.brainstorm(query)
             brainstormProgressBar.visibility = View.GONE
             result.onSuccess { output ->
-                currentBrainstormText = output
-                brainstormResultText.text = output
+                displayBrainstormResult(output)
             }.onFailure { err ->
-                brainstormResultText.text = "Error: ${err.message}"
+                displayBrainstormResult("Error: ${err.message}")
             }
+        }
+    }
+
+    private fun executeQuickMessage(query: String) {
+        if (query.isBlank()) return
+        brainstormProgressBar.visibility = View.VISIBLE
+        layoutBrainstormCards.removeAllViews()
+        val loadingView = TextView(this).apply {
+            text = "Generating concise <50-word quick message..."
+            setTextColor(Color.parseColor("#94A3B8"))
+            textSize = 12.5f
+            setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8))
+        }
+        layoutBrainstormCards.addView(loadingView)
+
+        serviceScope.launch {
+            val result = smeBrainstormer.quickMessage(query)
+            brainstormProgressBar.visibility = View.GONE
+            result.onSuccess { output ->
+                displayBrainstormResult(output)
+            }.onFailure { err ->
+                displayBrainstormResult("Error: ${err.message}")
+            }
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    private fun displayBrainstormResult(rawText: String) {
+        currentBrainstormText = rawText
+        layoutBrainstormCards.removeAllViews()
+
+        if (rawText.isBlank()) {
+            val placeholder = TextView(this).apply {
+                text = "Enter a topic above or tap a starter chip to brainstorm with your SME."
+                setTextColor(Color.parseColor("#94A3B8"))
+                textSize = 12.5f
+                setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8))
+            }
+            layoutBrainstormCards.addView(placeholder)
+            return
+        }
+
+        // Split text into pointer/concept lines or paragraphs
+        val lines = rawText.lines()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+
+        val concepts = mutableListOf<String>()
+        var currentChunk = StringBuilder()
+
+        for (line in lines) {
+            val isPointerStart = line.startsWith("•") ||
+                    line.startsWith("-") ||
+                    line.matches(Regex("^\\d+\\..*"))
+
+            if (isPointerStart) {
+                if (currentChunk.isNotBlank()) {
+                    concepts.add(currentChunk.toString().trim())
+                    currentChunk = StringBuilder()
+                }
+                currentChunk.append(line)
+            } else {
+                if (currentChunk.isNotEmpty()) {
+                    currentChunk.append(" ").append(line)
+                } else {
+                    currentChunk.append(line)
+                }
+            }
+        }
+        if (currentChunk.isNotBlank()) {
+            concepts.add(currentChunk.toString().trim())
+        }
+
+        if (concepts.isEmpty()) {
+            concepts.add(rawText.trim())
+        }
+
+        for ((index, concept) in concepts.withIndex()) {
+            val theme = pastelThemes[index % pastelThemes.size]
+
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                val shape = android.graphics.drawable.GradientDrawable().apply {
+                    cornerRadius = dpToPx(8).toFloat()
+                    setColor(Color.parseColor(theme.bgHex))
+                }
+                background = shape
+                setPadding(dpToPx(10), dpToPx(8), dpToPx(10), dpToPx(8))
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, dpToPx(2), 0, dpToPx(4))
+                }
+                layoutParams = lp
+            }
+
+            val cleanConcept = concept.replaceFirst(Regex("^[-•*]\\s*"), "")
+                .replaceFirst(Regex("^\\d+\\.\\s*"), "")
+                .trim()
+
+            if (cleanConcept.contains(":")) {
+                val parts = cleanConcept.split(":", limit = 2)
+                val title = parts[0].trim()
+                val desc = parts[1].trim()
+
+                val titleView = TextView(this).apply {
+                    text = "• $title"
+                    textSize = 12f
+                    setTextColor(Color.parseColor(theme.badgeHex))
+                    setTypeface(null, Typeface.BOLD)
+                }
+                val descView = TextView(this).apply {
+                    text = desc
+                    textSize = 11.5f
+                    setTextColor(Color.parseColor(theme.textHex))
+                    setLineSpacing(2f, 1f)
+                    setPadding(0, dpToPx(2), 0, 0)
+                    setTextIsSelectable(true)
+                }
+                card.addView(titleView)
+                card.addView(descView)
+            } else {
+                val fullView = TextView(this).apply {
+                    text = if (concepts.size > 1) "• $cleanConcept" else cleanConcept
+                    textSize = 12f
+                    setTextColor(Color.parseColor(theme.textHex))
+                    setLineSpacing(2.5f, 1f)
+                    setTextIsSelectable(true)
+                }
+                card.addView(fullView)
+            }
+
+            layoutBrainstormCards.addView(card)
+        }
+
+        scrollBrainstormResult.post {
+            scrollBrainstormResult.scrollTo(0, 0)
         }
     }
 
@@ -545,7 +771,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     }
 
     private fun copyBrainstormToClipboard() {
-        val text = currentBrainstormText ?: brainstormResultText.text.toString()
+        val text = currentBrainstormText.orEmpty().trim()
         if (text.isNotBlank()) {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newPlainText("SME Brainstorm", text)
@@ -696,6 +922,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
 
         mode123Button.setOnClickListener {
+            toggleEmojiPicker(false)
             isSymbolsMode = !isSymbolsMode
             isShifted = false
             updateKeyboardKeys()
@@ -710,6 +937,96 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         }
 
         updateKeyboardKeys()
+    }
+
+    private fun setupEmojiPicker(root: View) {
+        layoutKeyboardKeys = root.findViewById(R.id.layout_keyboard_keys)
+        layoutEmojiPicker = root.findViewById(R.id.layout_emoji_picker)
+        keyEmojiButton = root.findViewById(R.id.key_emoji)
+        tabEmojiSmileys = root.findViewById(R.id.tab_emoji_smileys)
+        tabEmojiGestures = root.findViewById(R.id.tab_emoji_gestures)
+        tabEmojiWork = root.findViewById(R.id.tab_emoji_work)
+        tabEmojiSymbols = root.findViewById(R.id.tab_emoji_symbols)
+        gridEmojis = root.findViewById(R.id.grid_emojis)
+        btnEmojiAbc = root.findViewById(R.id.btn_emoji_abc)
+        btnEmojiSpace = root.findViewById(R.id.btn_emoji_space)
+        btnEmojiBackspace = root.findViewById(R.id.btn_emoji_backspace)
+
+        keyEmojiButton.setOnClickListener {
+            toggleEmojiPicker(true)
+        }
+
+        btnEmojiAbc.setOnClickListener {
+            toggleEmojiPicker(false)
+        }
+
+        btnEmojiSpace.setOnClickListener {
+            currentInputConnection?.commitText(" ", 1)
+        }
+
+        btnEmojiBackspace.setOnClickListener {
+            currentInputConnection?.deleteSurroundingText(1, 0)
+        }
+
+        tabEmojiSmileys.setOnClickListener { selectEmojiCategory("smileys") }
+        tabEmojiGestures.setOnClickListener { selectEmojiCategory("gestures") }
+        tabEmojiWork.setOnClickListener { selectEmojiCategory("work") }
+        tabEmojiSymbols.setOnClickListener { selectEmojiCategory("symbols") }
+
+        loadEmojiGrid("smileys")
+    }
+
+    private fun toggleEmojiPicker(show: Boolean) {
+        if (show) {
+            layoutKeyboardKeys.visibility = View.GONE
+            layoutEmojiPicker.visibility = View.VISIBLE
+        } else {
+            layoutEmojiPicker.visibility = View.GONE
+            layoutKeyboardKeys.visibility = View.VISIBLE
+        }
+    }
+
+    private fun selectEmojiCategory(category: String) {
+        val tabs = listOf(
+            tabEmojiSmileys to "smileys",
+            tabEmojiGestures to "gestures",
+            tabEmojiWork to "work",
+            tabEmojiSymbols to "symbols"
+        )
+        for ((btn, cat) in tabs) {
+            if (cat == category) {
+                btn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#4F46E5"))
+                btn.setTextColor(Color.WHITE)
+            } else {
+                btn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#2D3035"))
+                btn.setTextColor(Color.parseColor("#C4C6D0"))
+            }
+        }
+        loadEmojiGrid(category)
+    }
+
+    private fun loadEmojiGrid(category: String) {
+        gridEmojis.removeAllViews()
+        val emojis = emojiCategories[category] ?: return
+
+        val itemSize = dpToPx(44)
+        for (emoji in emojis) {
+            val btn = Button(this, null, 0, R.style.KeyStyle).apply {
+                text = emoji
+                textSize = 20f
+                setPadding(0, 0, 0, 0)
+                layoutParams = GridLayout.LayoutParams().apply {
+                    width = 0
+                    height = itemSize
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                    setMargins(dpToPx(2), dpToPx(2), dpToPx(2), dpToPx(2))
+                }
+                setOnClickListener {
+                    currentInputConnection?.commitText(emoji, 1)
+                }
+            }
+            gridEmojis.addView(btn)
+        }
     }
 
     private fun updateKeyboardKeys() {
@@ -1039,6 +1356,7 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
         previewLayout.visibility = View.GONE
         brainstormPanelLayout.visibility = View.GONE
         normalLayout.visibility = View.VISIBLE
+        toggleEmojiPicker(false)
         hideEnhancedPreview()
         resetStatus("Tap mic or Enhance")
     }

@@ -175,12 +175,14 @@
 
         <!-- Keyboard Key Rows -->
         <LinearLayout
+            android:id="@+id/layout_keyboard_keys"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="vertical"
             android:paddingHorizontal="3dp"
-            android:paddingVertical="4dp">
+            android:paddingVertical="4dp"
+            android:visibility="visible">
 
             <!-- Row 1: Q W E R T Y U I O P (or 1 2 3 4 5 6 7 8 9 0) -->
             <LinearLayout
@@ -251,17 +253,157 @@
                     android:text="" />
             </LinearLayout>
 
-            <!-- Row 4: ?123, Comma, Space, Period, Enter -->
+            <!-- Row 4: ?123, Emoji, Space, Comma, Period, Enter -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
-                <Button style="@style/ActionKeyStyle" android:id="@+id/key_123" android:text="@string/key_123_label" android:layout_weight="1.5" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_comma" android:text="," android:layout_weight="1" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_space" android:text="Space" android:layout_weight="4.5" />
-                <Button style="@style/KeyStyle" android:id="@+id/key_period" android:text="." android:layout_weight="1" />
-                <Button style="@style/EnterKeyStyle" android:id="@+id/key_enter" android:text="↵" android:layout_weight="2" />
+                <Button style="@style/ActionKeyStyle" android:id="@+id/key_123" android:text="@string/key_123_label" android:layout_weight="1.4" />
+                <Button style="@style/ActionKeyStyle" android:id="@+id/key_emoji" android:text="😀" android:textSize="17sp" android:layout_weight="1.1" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_space" android:text="Space" android:layout_weight="4.3" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_comma" android:text="," android:layout_weight="0.8" />
+                <Button style="@style/KeyStyle" android:id="@+id/key_period" android:text="." android:layout_weight="0.8" />
+                <Button style="@style/EnterKeyStyle" android:id="@+id/key_enter" android:text="↵" android:layout_weight="1.6" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Emoji Picker View -->
+        <LinearLayout
+            android:id="@+id/layout_emoji_picker"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="#1E2024"
+            android:padding="4dp"
+            android:visibility="gone">
+
+            <!-- Category Tabs -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:scrollbars="none"
+                android:layout_marginBottom="4dp">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/tab_emoji_smileys"
+                        style="@style/ActionKeyStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="😀 Smileys"
+                        android:textSize="11sp"
+                        android:textColor="@color/white"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#4F46E5"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/tab_emoji_gestures"
+                        style="@style/ActionKeyStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="4dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="👍 Hands"
+                        android:textSize="11sp"
+                        android:textColor="#C4C6D0"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#2D3035"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/tab_emoji_work"
+                        style="@style/ActionKeyStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="4dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="🚀 Ideas"
+                        android:textSize="11sp"
+                        android:textColor="#C4C6D0"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#2D3035"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/tab_emoji_symbols"
+                        style="@style/ActionKeyStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="4dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="🔥 Reactions"
+                        android:textSize="11sp"
+                        android:textColor="#C4C6D0"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#2D3035"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Scrollable Emojis Flow/Grid -->
+            <ScrollView
+                android:id="@+id/scroll_emojis"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true">
+                <GridLayout
+                    android:id="@+id/grid_emojis"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="7"
+                    android:alignmentMode="alignMargins"
+                    android:columnOrderPreserved="false" />
+            </ScrollView>
+
+            <!-- Bottom Action Row in Emoji Picker -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="3dp"
+                android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_emoji_abc"
+                    style="@style/ActionKeyStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.6"
+                    android:text="ABC"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="6dp" />
+                <Button
+                    android:id="@+id/btn_emoji_space"
+                    style="@style/KeyStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="4"
+                    android:text="Space"
+                    android:layout_marginHorizontal="4dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_emoji_backspace"
+                    style="@style/ActionKeyStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.6"
+                    app:icon="@drawable/ic_backspace"
+                    app:iconGravity="textStart"
+                    app:iconSize="20dp"
+                    app:iconTint="@color/key_text"
+                    app:cornerRadius="6dp" />
             </LinearLayout>
 
         </LinearLayout>
@@ -490,18 +632,35 @@
                     android:orientation="horizontal">
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_quick_msg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginEnd="6dp"
+                        android:paddingHorizontal="9dp"
+                        android:paddingVertical="0dp"
+                        android:text="Quick Msg (&lt;50w)"
+                        android:textSize="10.5sp"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textStyle="bold"
+                        app:cornerRadius="13dp"
+                        android:backgroundTint="#0284C7"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_pros_cons"
                         android:layout_width="wrap_content"
                         android:layout_height="26dp"
                         android:layout_marginEnd="6dp"
-                        android:paddingHorizontal="8dp"
+                        android:paddingHorizontal="9dp"
                         android:paddingVertical="0dp"
                         android:text="Pros &amp; Cons"
                         android:textSize="10.5sp"
                         android:textAllCaps="false"
-                        android:textColor="#C4C6D0"
+                        android:textColor="@color/white"
                         app:cornerRadius="13dp"
-                        android:backgroundTint="#2D3035"
+                        android:backgroundTint="#2563EB"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
 
@@ -510,14 +669,14 @@
                         android:layout_width="wrap_content"
                         android:layout_height="26dp"
                         android:layout_marginEnd="6dp"
-                        android:paddingHorizontal="8dp"
+                        android:paddingHorizontal="9dp"
                         android:paddingVertical="0dp"
                         android:text="Key Strategy"
                         android:textSize="10.5sp"
                         android:textAllCaps="false"
-                        android:textColor="#C4C6D0"
+                        android:textColor="@color/white"
                         app:cornerRadius="13dp"
-                        android:backgroundTint="#2D3035"
+                        android:backgroundTint="#4F46E5"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
 
@@ -526,14 +685,14 @@
                         android:layout_width="wrap_content"
                         android:layout_height="26dp"
                         android:layout_marginEnd="6dp"
-                        android:paddingHorizontal="8dp"
+                        android:paddingHorizontal="9dp"
                         android:paddingVertical="0dp"
                         android:text="Counterarguments"
                         android:textSize="10.5sp"
                         android:textAllCaps="false"
-                        android:textColor="#C4C6D0"
+                        android:textColor="@color/white"
                         app:cornerRadius="13dp"
-                        android:backgroundTint="#2D3035"
+                        android:backgroundTint="#1D4ED8"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
 
@@ -541,14 +700,14 @@
                         android:id="@+id/chip_explain"
                         android:layout_width="wrap_content"
                         android:layout_height="26dp"
-                        android:paddingHorizontal="8dp"
+                        android:paddingHorizontal="9dp"
                         android:paddingVertical="0dp"
                         android:text="Explain Simply"
                         android:textSize="10.5sp"
                         android:textAllCaps="false"
-                        android:textColor="#C4C6D0"
+                        android:textColor="@color/white"
                         app:cornerRadius="13dp"
-                        android:backgroundTint="#2D3035"
+                        android:backgroundTint="#3B82F6"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
 
@@ -556,28 +715,37 @@
 
             </HorizontalScrollView>
 
-            <!-- Result Container -->
+            <!-- Result Container with Pastel Concept Cards -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:background="#242830"
-                android:padding="8dp">
+                android:background="#1E2024"
+                android:padding="6dp">
 
                 <ScrollView
+                    android:id="@+id/scroll_brainstorm_result"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:fillViewport="true">
 
-                    <TextView
-                        android:id="@+id/tv_brainstorm_result"
+                    <LinearLayout
+                        android:id="@+id/layout_brainstorm_cards"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Enter a topic above or tap a starter chip to brainstorm with your SME."
-                        android:textColor="#F8FAFC"
-                        android:textSize="12.5sp"
-                        android:lineSpacingExtra="3dp"
-                        android:textIsSelectable="true" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_brainstorm_result"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Enter a topic above or tap a starter chip to brainstorm with your SME."
+                            android:textColor="#94A3B8"
+                            android:textSize="12.5sp"
+                            android:lineSpacingExtra="3dp"
+                            android:padding="8dp" />
+
+                    </LinearLayout>
 
                 </ScrollView>
 

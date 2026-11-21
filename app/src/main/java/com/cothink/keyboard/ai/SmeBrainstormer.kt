@@ -7,6 +7,7 @@ data class ChatTurn(
 
 interface SmeBrainstormer {
     suspend fun brainstorm(topicOrQuery: String): Result<String>
+    suspend fun quickMessage(topicOrQuery: String): Result<String>
     suspend fun converseTurn(history: List<ChatTurn>, userMessage: String): Result<String>
     suspend fun concludeSession(history: List<ChatTurn>): Result<String>
 }

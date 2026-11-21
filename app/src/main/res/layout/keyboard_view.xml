@@ -533,14 +533,14 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_mode_quick"
                 android:layout_width="wrap_content"
-                android:layout_height="24dp"
-                android:paddingHorizontal="8dp"
+                android:layout_height="28dp"
+                android:paddingHorizontal="10dp"
                 android:paddingVertical="0dp"
                 android:text="Quick"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                app:cornerRadius="12dp"
+                app:cornerRadius="14dp"
                 android:backgroundTint="#4F46E5"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
@@ -548,16 +548,16 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_mode_live"
                 android:layout_width="wrap_content"
-                android:layout_height="24dp"
+                android:layout_height="28dp"
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="6dp"
-                android:paddingHorizontal="8dp"
+                android:paddingHorizontal="10dp"
                 android:paddingVertical="0dp"
                 android:text="Live Voice"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textAllCaps="false"
                 android:textColor="#94A3B8"
-                app:cornerRadius="12dp"
+                app:cornerRadius="14dp"
                 android:backgroundTint="#2D3035"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
@@ -618,7 +618,7 @@
 
             </LinearLayout>
 
-            <!-- Quick Starter Chips Row -->
+            <!-- Quick Starter Chips Row (Larger Buttons) -->
             <HorizontalScrollView
                 android:id="@+id/scroll_brainstorm_chips"
                 android:layout_width="match_parent"
@@ -634,16 +634,16 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_quick_msg"
                         android:layout_width="wrap_content"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="6dp"
-                        android:paddingHorizontal="9dp"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="13dp"
                         android:paddingVertical="0dp"
                         android:text="Quick Msg (&lt;50w)"
-                        android:textSize="10.5sp"
+                        android:textSize="12sp"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
                         android:textStyle="bold"
-                        app:cornerRadius="13dp"
+                        app:cornerRadius="17dp"
                         android:backgroundTint="#0284C7"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
@@ -651,15 +651,15 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_pros_cons"
                         android:layout_width="wrap_content"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="6dp"
-                        android:paddingHorizontal="9dp"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="13dp"
                         android:paddingVertical="0dp"
                         android:text="Pros &amp; Cons"
-                        android:textSize="10.5sp"
+                        android:textSize="12sp"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        app:cornerRadius="13dp"
+                        app:cornerRadius="17dp"
                         android:backgroundTint="#2563EB"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
@@ -667,15 +667,15 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_strategy"
                         android:layout_width="wrap_content"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="6dp"
-                        android:paddingHorizontal="9dp"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="13dp"
                         android:paddingVertical="0dp"
                         android:text="Key Strategy"
-                        android:textSize="10.5sp"
+                        android:textSize="12sp"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        app:cornerRadius="13dp"
+                        app:cornerRadius="17dp"
                         android:backgroundTint="#4F46E5"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
@@ -683,15 +683,15 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_counterargs"
                         android:layout_width="wrap_content"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="6dp"
-                        android:paddingHorizontal="9dp"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="13dp"
                         android:paddingVertical="0dp"
                         android:text="Counterarguments"
-                        android:textSize="10.5sp"
+                        android:textSize="12sp"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        app:cornerRadius="13dp"
+                        app:cornerRadius="17dp"
                         android:backgroundTint="#1D4ED8"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
@@ -699,14 +699,14 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_explain"
                         android:layout_width="wrap_content"
-                        android:layout_height="26dp"
-                        android:paddingHorizontal="9dp"
+                        android:layout_height="34dp"
+                        android:paddingHorizontal="13dp"
                         android:paddingVertical="0dp"
                         android:text="Explain Simply"
-                        android:textSize="10.5sp"
+                        android:textSize="12sp"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        app:cornerRadius="13dp"
+                        app:cornerRadius="17dp"
                         android:backgroundTint="#3B82F6"
                         android:minWidth="0dp"
                         android:minHeight="0dp" />
@@ -715,13 +715,13 @@
 
             </HorizontalScrollView>
 
-            <!-- Result Container with Pastel Concept Cards -->
+            <!-- Result Container (Normal Plain Dark Theme) -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:background="#1E2024"
-                android:padding="6dp">
+                android:background="#242830"
+                android:padding="8dp">
 
                 <ScrollView
                     android:id="@+id/scroll_brainstorm_result"
@@ -740,10 +740,10 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="Enter a topic above or tap a starter chip to brainstorm with your SME."
-                            android:textColor="#94A3B8"
+                            android:textColor="#F8FAFC"
                             android:textSize="12.5sp"
                             android:lineSpacingExtra="3dp"
-                            android:padding="8dp" />
+                            android:textIsSelectable="true" />
 
                     </LinearLayout>
 
@@ -759,10 +759,10 @@
 
             </FrameLayout>
 
-            <!-- Bottom Action Row: Copy & Insert -->
+            <!-- Bottom Action Row: Copy & Insert (Larger) -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="38dp"
+                android:layout_height="42dp"
                 android:layout_marginTop="6dp"
                 android:orientation="horizontal"
                 android:gravity="center">
@@ -781,7 +781,7 @@
                     android:text="Copy"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
@@ -798,7 +798,7 @@
                     android:text="Insert into Chat"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
             </LinearLayout>

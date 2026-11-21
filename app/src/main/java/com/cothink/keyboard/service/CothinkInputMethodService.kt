@@ -113,20 +113,6 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
     private lateinit var btnEmojiSpace: Button
     private lateinit var btnEmojiBackspace: MaterialButton
 
-    private data class PastelTheme(
-        val bgHex: String,
-        val badgeHex: String,
-        val textHex: String
-    )
-
-    private val pastelThemes = listOf(
-        PastelTheme(bgHex = "#E0F2FE", badgeHex = "#0284C7", textHex = "#0F172A"), // Sky Blue
-        PastelTheme(bgHex = "#EEF2FF", badgeHex = "#4F46E5", textHex = "#1E1B4B"), // Indigo
-        PastelTheme(bgHex = "#ECFDF5", badgeHex = "#059669", textHex = "#064E3B"), // Emerald
-        PastelTheme(bgHex = "#FEF3C7", badgeHex = "#D97706", textHex = "#78350F"), // Amber
-        PastelTheme(bgHex = "#FFE4E6", badgeHex = "#E11D48", textHex = "#881337"), // Rose
-        PastelTheme(bgHex = "#F3E8FF", badgeHex = "#7C3AED", textHex = "#581C87")  // Violet
-    )
 
     private val emojiCategories = mapOf(
         "smileys" to listOf(
@@ -684,24 +670,15 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
             concepts.add(rawText.trim())
         }
 
-        for ((index, concept) in concepts.withIndex()) {
-            val theme = pastelThemes[index % pastelThemes.size]
-
-            val card = LinearLayout(this).apply {
+        for (concept in concepts) {
+            val itemLayout = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                val shape = android.graphics.drawable.GradientDrawable().apply {
-                    cornerRadius = dpToPx(8).toFloat()
-                    setColor(Color.parseColor(theme.bgHex))
-                }
-                background = shape
-                setPadding(dpToPx(10), dpToPx(8), dpToPx(10), dpToPx(8))
-                val lp = LinearLayout.LayoutParams(
+                layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(0, dpToPx(2), 0, dpToPx(4))
+                    setMargins(0, dpToPx(3), 0, dpToPx(6))
                 }
-                layoutParams = lp
             }
 
             val cleanConcept = concept.replaceFirst(Regex("^[-•*]\\s*"), "")
@@ -710,37 +687,42 @@ class CothinkInputMethodService : InputMethodService(), RecognitionListener {
 
             if (cleanConcept.contains(":")) {
                 val parts = cleanConcept.split(":", limit = 2)
-                val title = parts[0].trim()
-                val desc = parts[1].trim()
+                val mainPoint = parts[0].trim()
+                val explanation = parts[1].trim()
 
+                // Highlighted Main Point
                 val titleView = TextView(this).apply {
-                    text = "• $title"
-                    textSize = 12f
-                    setTextColor(Color.parseColor(theme.badgeHex))
+                    text = "• $mainPoint:"
+                    textSize = 12.5f
+                    setTextColor(Color.parseColor("#60A5FA")) // Highlighted main point
                     setTypeface(null, Typeface.BOLD)
-                }
-                val descView = TextView(this).apply {
-                    text = desc
-                    textSize = 11.5f
-                    setTextColor(Color.parseColor(theme.textHex))
-                    setLineSpacing(2f, 1f)
-                    setPadding(0, dpToPx(2), 0, 0)
                     setTextIsSelectable(true)
                 }
-                card.addView(titleView)
-                card.addView(descView)
+
+                // Normal Plain Explanation (like before)
+                val descView = TextView(this).apply {
+                    text = explanation
+                    textSize = 12f
+                    setTextColor(Color.parseColor("#F8FAFC")) // Normal text like before
+                    setLineSpacing(3f, 1f)
+                    setPadding(dpToPx(12), dpToPx(2), 0, 0)
+                    setTextIsSelectable(true)
+                }
+
+                itemLayout.addView(titleView)
+                itemLayout.addView(descView)
             } else {
                 val fullView = TextView(this).apply {
                     text = if (concepts.size > 1) "• $cleanConcept" else cleanConcept
-                    textSize = 12f
-                    setTextColor(Color.parseColor(theme.textHex))
-                    setLineSpacing(2.5f, 1f)
+                    textSize = 12.5f
+                    setTextColor(Color.parseColor("#F8FAFC")) // Normal text like before
+                    setLineSpacing(3f, 1f)
                     setTextIsSelectable(true)
                 }
-                card.addView(fullView)
+                itemLayout.addView(fullView)
             }
 
-            layoutBrainstormCards.addView(card)
+            layoutBrainstormCards.addView(itemLayout)
         }
 
         scrollBrainstormResult.post {
